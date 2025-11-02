@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProduct } from '../services/api';
+import { useCart } from '../context/CartContext'; 
 
 function ProductDetail() {
-  const { id } = useParams(); // Get product ID from URL
+  const { id } = useParams();
   const navigate = useNavigate();
+  const { addToCart } = useCart(); 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [quantity, setQuantity] = useState(1); 
+  const [addedToCart, setAddedToCart] = useState(false); 
 
   useEffect(() => {
     fetchProduct();
@@ -25,6 +29,13 @@ function ProductDetail() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Add this function
+  const handleAddToCart = () => {
+    addToCart(product, quantity);
+    setAddedToCart(true);
+    setTimeout(() => setAddedToCart(false), 2000);
   };
 
   if (loading) return (
@@ -100,15 +111,40 @@ function ProductDetail() {
             </div>
           </div>
 
+          {/* Quantity Selector */}
+          {product.stock > 0 && (
+            <div className="mb-6">
+              <label className="block font-semibold mb-2">Quantity:</label>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded"
+                >
+                  -
+                </button>
+                <span className="text-xl font-semibold w-12 text-center">{quantity}</span>
+                <button
+                  onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                  className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          )}
+
           <button 
+            onClick={handleAddToCart}
             disabled={product.stock === 0}
             className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors ${
               product.stock > 0 
-                ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                ? addedToCart
+                  ? 'bg-green-600 text-white'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
-            {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
+            {addedToCart ? '✓ Added to Cart' : product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
           </button>
         </div>
       </div>

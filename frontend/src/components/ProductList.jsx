@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom'; 
 import { getProducts } from '../services/api';
 
 function ProductList() {
@@ -41,8 +42,9 @@ function ProductList() {
       <h1 className="text-4xl font-bold text-center mb-8">Products</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {products.map((product) => (
-          <div 
-            key={product.id} 
+          <Link 
+            to={`/product/${product.id}`} 
+            key={product.id}
             className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300"
           >
             {product.image && (
@@ -63,7 +65,7 @@ function ProductList() {
                 {product.category}
               </span>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
