@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 function Navbar() {
   const { getCartCount } = useCart();
+  const { user, logout, isAuthenticated } = useAuth();
   const cartCount = getCartCount();
 
   return (
@@ -48,6 +50,35 @@ function Navbar() {
                 </span>
               )}
             </Link>
+
+            {isAuthenticated ? (
+              <div className="flex items-center gap-4">
+                <span className="text-gray-700">
+                  Hi, <span className="font-semibold">{user?.username}</span>
+                </span>
+                <button
+                  onClick={logout}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Link
+                  to="/login"
+                  className="px-4 py-2 text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>
