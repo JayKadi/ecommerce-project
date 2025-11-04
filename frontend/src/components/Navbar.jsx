@@ -24,6 +24,14 @@ function Navbar() {
             >
               Products
             </Link>
+            {isAuthenticated && (
+  <Link 
+    to="/orders" 
+    className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+  >
+    Orders
+  </Link>
+)}
             
             <Link 
               to="/cart" 

@@ -116,10 +116,12 @@ function Cart() {
               </div>
             </div>
 
-            <button className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
-              Proceed to Checkout
-            </button>
-
+            <Link 
+  to="/checkout"
+  className="block w-full bg-blue-600 text-center text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+>
+  Proceed to Checkout
+</Link>
             <Link 
               to="/"
               className="block text-center mt-4 text-blue-600 hover:text-blue-700"
