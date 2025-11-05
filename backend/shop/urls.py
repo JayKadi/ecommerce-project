@@ -1,6 +1,9 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ProductViewSet, OrderViewSet, register, login, logout, get_user
+from .views import (
+    ProductViewSet, OrderViewSet, register, login, logout, get_user,
+    google_login  # Changed from GoogleLogin
+)
 
 router = DefaultRouter()
 router.register(r'products', ProductViewSet)
@@ -12,4 +15,5 @@ urlpatterns = [
     path('auth/login/', login, name='login'),
     path('auth/logout/', logout, name='logout'),
     path('auth/user/', get_user, name='get_user'),
+    path('auth/google/', google_login, name='google_login'),  # Changed to function view
 ]

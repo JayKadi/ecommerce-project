@@ -1,11 +1,36 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
+import axios from 'axios';
 
 function SideLoginPrompt() {
   const [isMinimized, setIsMinimized] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const response = await axios.post('http://127.0.0.1:8000/api/auth/google/', {
+        access_token: credentialResponse.credential,
+      });
+
+      const { key: token, user } = response.data;
+      localStorage.setItem('token', token);
+      
+      setIsDismissed(true);
+      window.location.reload(); // Refresh to update auth state
+    } catch (error) {
+      console.error('Google login failed:', error);
+      alert('Google login failed. Please try again.');
+    }
+  };
+
+  const handleGoogleError = () => {
+    console.error('Google login failed');
+    alert('Google login failed. Please try again.');
+  };
 
   // Don't show if authenticated or dismissed
   if (isAuthenticated || isDismissed) {
@@ -66,6 +91,30 @@ function SideLoginPrompt() {
           <p className="text-sm text-gray-600">
             Login for exclusive deals and faster checkout
           </p>
+        </div>
+
+        {/* Google Login Button */}
+        <div className="mb-3">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            useOneTap={false}
+            theme="outline"
+            size="large"
+            text="continue_with"
+            shape="rectangular"
+            width="280"
+          />
+        </div>
+
+        {/* Divider */}
+        <div className="relative my-3">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300"></div>
+          </div>
+          <div className="relative flex justify-center text-xs">
+            <span className="px-2 bg-white text-gray-500">Or</span>
+          </div>
         </div>
 
         {/* Buttons */}
