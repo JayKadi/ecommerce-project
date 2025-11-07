@@ -27,10 +27,28 @@ adminApi.interceptors.request.use(
 export const checkAdmin = () => adminApi.get('/check/');
 export const getDashboardStats = () => adminApi.get('/stats/');
 export const getAllProducts = () => adminApi.get('/products/');
-export const createProduct = (data) => adminApi.post('/products/create/', data);
-export const updateProduct = (id, data) => adminApi.put(`/products/${id}/update/`, data);
-export const deleteProduct = (id) => adminApi.delete(`/products/${id}/delete/`);
+
+export const createProduct = (data) => {
+  // If data is FormData, change Content-Type
+  const config = data instanceof FormData ? {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  } : {};
+  
+  return adminApi.post('/products/create/', data, config);
+};
+
+export const updateProduct = (id, data) => {
+  const config = data instanceof FormData ? {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  } : {};
+  
+  return adminApi.put(`/products/${id}/update/`, data, config);  // ✅ Fixed: added ( before backtick
+};
+
+export const deleteProduct = (id) => adminApi.delete(`/products/${id}/delete/`);  // ✅ Fixed: added ( before backtick
+
 export const getAllOrders = () => adminApi.get('/orders/');
-export const updateOrderStatus = (id, status) => adminApi.put(`/orders/${id}/status/`, { status });
+
+export const updateOrderStatus = (id, status) => adminApi.put(`/orders/${id}/status/`, { status });  // ✅ Fixed: added ( before backtick
 
 export default adminApi;

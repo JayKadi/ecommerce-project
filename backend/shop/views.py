@@ -270,9 +270,19 @@ def admin_update_order_status(request, pk):
         return Response({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
     
     new_status = request.data.get('status')
+    old_status = order.status  # Store old status
+    
     if new_status in dict(Order.STATUS_CHOICES):
         order.status = new_status
         order.save()
+        
+        # If order is cancelled, restore stock
+        if new_status == 'cancelled' and old_status != 'cancelled':
+            for item in order.items.all():
+                product = item.product
+                product.stock += item.quantity  # Add back the quantity
+                product.save()
+        
         serializer = OrderSerializer(order)
         return Response(serializer.data)
     

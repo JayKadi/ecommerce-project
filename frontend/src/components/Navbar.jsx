@@ -32,6 +32,15 @@ function Navbar() {
     Orders
   </Link>
 )}
+ {/* Admin Dashboard Link - Only for logged in users */}
+            {isAuthenticated && (
+              <Link 
+                to="/admin" 
+                className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+              >
+                ⚙️ Admin
+              </Link>
+            )}
             
             <Link 
               to="/cart" 
@@ -86,6 +95,7 @@ function Navbar() {
                   Register
                 </Link>
               </div>
+              
             )}
           </div>
         </div>
