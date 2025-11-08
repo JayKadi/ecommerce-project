@@ -12,10 +12,18 @@ function AddProduct() {
     price: '',
     stock: '',
     category: '',
+    size: 'one_size',
+    condition: 'good',
+    instagram_link: '',
+    tiktok_link: '',
     is_active: true,
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [additionalImages, setAdditionalImages] = useState([]);
+  const [additionalPreviews, setAdditionalPreviews] = useState([]);
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoPreview, setVideoPreview] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -29,12 +37,38 @@ function AddProduct() {
     const file = e.target.files[0];
     if (file) {
       setImageFile(file);
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAdditionalImagesChange = (e) => {
+    const files = Array.from(e.target.files);
+    setAdditionalImages(files);
+    
+    // Create previews
+    const previews = [];
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        previews.push(reader.result);
+        if (previews.length === files.length) {
+          setAdditionalPreviews(previews);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleVideoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setVideoFile(file);
+      const url = URL.createObjectURL(file);
+      setVideoPreview(url);
     }
   };
 
@@ -44,19 +78,30 @@ function AddProduct() {
     setLoading(true);
 
     try {
-      // Create FormData for file upload
       const data = new FormData();
       data.append('name', formData.name);
       data.append('description', formData.description);
       data.append('price', formData.price);
       data.append('stock', formData.stock);
       data.append('category', formData.category);
+      data.append('size', formData.size);
+      data.append('condition', formData.condition);
       data.append('is_active', formData.is_active);
+      
+      if (formData.instagram_link) {
+        data.append('instagram_link', formData.instagram_link);
+      }
+      if (formData.tiktok_link) {
+        data.append('tiktok_link', formData.tiktok_link);
+      }
       
       if (imageFile) {
         data.append('image', imageFile);
       }
 
+      // Note: Additional images and video will need separate API calls after product creation
+      // For now, we'll just create the basic product
+      
       await createProduct(data);
       alert('Product added successfully!');
       navigate('/admin/products');
@@ -70,7 +115,7 @@ function AddProduct() {
 
   return (
     <div className="min-h-screen bg-gray-100 py-8">
-      <div className="max-w-3xl mx-auto px-4">
+      <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">➕ Add New Product</h1>
@@ -97,7 +142,7 @@ function AddProduct() {
                 value={formData.name}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., Vintage Denim Jacket"
+                placeholder="e.g., Vintage Levi's Denim Jacket - Size M"
                 required
               />
             </div>
@@ -113,12 +158,12 @@ function AddProduct() {
                 onChange={handleChange}
                 rows="4"
                 className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Describe the item, condition, size, etc..."
+                placeholder="Describe the item, condition details, measurements, brand, etc..."
               />
             </div>
 
-            {/* Price and Stock */}
-            <div className="grid md:grid-cols-2 gap-6">
+            {/* Price, Stock, Category */}
+            <div className="grid md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Price (KES) <span className="text-red-500">*</span>
@@ -138,7 +183,7 @@ function AddProduct() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Stock Quantity <span className="text-red-500">*</span>
+                  Stock <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -151,31 +196,101 @@ function AddProduct() {
                   required
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Jackets"
+                  required
+                />
+              </div>
             </div>
 
-            {/* Category */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Category <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., Jackets, Hoodies, Jeans, Shoes"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Common categories: Jackets, Hoodies, T-Shirts, Jeans, Dresses, Shoes, Accessories
-              </p>
+            {/* Size and Condition */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Size <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="size"
+                  value={formData.size}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="xs">XS</option>
+                  <option value="s">S</option>
+                  <option value="m">M</option>
+                  <option value="l">L</option>
+                  <option value="xl">XL</option>
+                  <option value="xxl">XXL</option>
+                  <option value="one_size">One Size</option>
+                  <option value="various">Various Sizes</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Condition <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="condition"
+                  value={formData.condition}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="new">New</option>
+                  <option value="like_new">Like New</option>
+                  <option value="good">Good</option>
+                  <option value="fair">Fair</option>
+                </select>
+              </div>
             </div>
 
-            {/* Image Upload */}
+            {/* Social Media Links */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  📸 Instagram Link (Optional)
+                </label>
+                <input
+                  type="url"
+                  name="instagram_link"
+                  value={formData.instagram_link}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://instagram.com/p/..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  🎵 TikTok Link (Optional)
+                </label>
+                <input
+                  type="url"
+                  name="tiktok_link"
+                  value={formData.tiktok_link}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://tiktok.com/@..."
+                />
+              </div>
+            </div>
+
+            {/* Main Image Upload */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Product Image
+                Main Product Image
               </label>
               <input
                 type="file"
@@ -190,6 +305,57 @@ function AddProduct() {
                     src={imagePreview}
                     alt="Preview"
                     className="w-48 h-48 object-cover rounded-lg border"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Additional Images */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Additional Images (Optional)
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleAdditionalImagesChange}
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">You can select multiple images</p>
+              {additionalPreviews.length > 0 && (
+                <div className="mt-4 grid grid-cols-4 gap-4">
+                  {additionalPreviews.map((preview, index) => (
+                    <img
+                      key={index}
+                      src={preview}
+                      alt={`Additional ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg border"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Video Upload */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Product Video (Optional)
+              </label>
+              <input
+                type="file"
+                accept="video/*"
+                onChange={handleVideoChange}
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">Show off your product in action!</p>
+              {videoPreview && (
+                <div className="mt-4">
+                  <p className="text-sm text-gray-600 mb-2">Video Preview:</p>
+                  <video
+                    src={videoPreview}
+                    controls
+                    className="w-full max-w-md rounded-lg border"
                   />
                 </div>
               )}
@@ -232,11 +398,12 @@ function AddProduct() {
         <div className="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
           <h3 className="font-semibold text-blue-800 mb-2">💡 Tips for Adding Products:</h3>
           <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
-            <li>Use clear, descriptive names (e.g., "Vintage Levi's Denim Jacket - Size M")</li>
-            <li>Take photos with good lighting and show all angles</li>
-            <li>Mention condition, size, brand, and any flaws in the description</li>
+            <li>Use clear, descriptive names with size info (e.g., "Vintage Levi's 501 - Size 32")</li>
+            <li>Take multiple high-quality photos with good lighting</li>
+            <li>Show all angles and any flaws in additional images</li>
+            <li>Videos help customers see the fit and material better!</li>
+            <li>Link to your Instagram/TikTok posts for social proof</li>
             <li>Most thrift items are unique - set stock to 1</li>
-            <li>Price competitively based on brand and condition</li>
           </ul>
         </div>
       </div>

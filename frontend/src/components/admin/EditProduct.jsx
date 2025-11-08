@@ -15,6 +15,10 @@ function EditProduct() {
     price: '',
     stock: '',
     category: '',
+    size: 'one_size',
+    condition: 'good',
+    instagram_link: '',
+    tiktok_link: '',
     is_active: true,
   });
   const [imageFile, setImageFile] = useState(null);
@@ -35,6 +39,10 @@ function EditProduct() {
         price: product.price,
         stock: product.stock,
         category: product.category,
+        size: product.size || 'one_size',
+        condition: product.condition || 'good',
+        instagram_link: product.instagram_link || '',
+        tiktok_link: product.tiktok_link || '',
         is_active: product.is_active,
       });
       if (product.image) {
@@ -80,7 +88,16 @@ function EditProduct() {
       data.append('price', formData.price);
       data.append('stock', formData.stock);
       data.append('category', formData.category);
+      data.append('size', formData.size);
+      data.append('condition', formData.condition);
       data.append('is_active', formData.is_active);
+      
+      if (formData.instagram_link) {
+        data.append('instagram_link', formData.instagram_link);
+      }
+      if (formData.tiktok_link) {
+        data.append('tiktok_link', formData.tiktok_link);
+      }
       
       if (imageFile) {
         data.append('image', imageFile);
@@ -107,7 +124,7 @@ function EditProduct() {
 
   return (
     <div className="min-h-screen bg-gray-100 py-8">
-      <div className="max-w-3xl mx-auto px-4">
+      <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">✏️ Edit Product</h1>
@@ -152,8 +169,8 @@ function EditProduct() {
               />
             </div>
 
-            {/* Price and Stock */}
-            <div className="grid md:grid-cols-2 gap-6">
+            {/* Price, Stock, Category */}
+            <div className="grid md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Price (KES) <span className="text-red-500">*</span>
@@ -172,7 +189,7 @@ function EditProduct() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Stock Quantity <span className="text-red-500">*</span>
+                  Stock <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -184,21 +201,94 @@ function EditProduct() {
                   required
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
             </div>
 
-            {/* Category */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Category <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
+            {/* Size and Condition */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Size <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="size"
+                  value={formData.size}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="xs">XS</option>
+                  <option value="s">S</option>
+                  <option value="m">M</option>
+                  <option value="l">L</option>
+                  <option value="xl">XL</option>
+                  <option value="xxl">XXL</option>
+                  <option value="one_size">One Size</option>
+                  <option value="various">Various Sizes</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Condition <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="condition"
+                  value={formData.condition}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="new">New</option>
+                  <option value="like_new">Like New</option>
+                  <option value="good">Good</option>
+                  <option value="fair">Fair</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Social Media Links */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  📸 Instagram Link (Optional)
+                </label>
+                <input
+                  type="url"
+                  name="instagram_link"
+                  value={formData.instagram_link}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://instagram.com/p/..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  🎵 TikTok Link (Optional)
+                </label>
+                <input
+                  type="url"
+                  name="tiktok_link"
+                  value={formData.tiktok_link}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://tiktok.com/@..."
+                />
+              </div>
             </div>
 
             {/* Image Upload */}
