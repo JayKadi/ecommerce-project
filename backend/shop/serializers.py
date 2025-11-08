@@ -1,12 +1,26 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
-from .models import Product, Order, OrderItem
+from .models import Product, Order, OrderItem, ProductImage, ProductVideo
+
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'image', 'order']
+
+class ProductVideoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductVideo
+        fields = ['id', 'video', 'thumbnail']
 
 class ProductSerializer(serializers.ModelSerializer):
+    additional_images = ProductImageSerializer(many=True, read_only=True)
+    video = ProductVideoSerializer(read_only=True)
+    
     class Meta:
         model = Product
         fields = '__all__'
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
