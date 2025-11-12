@@ -76,43 +76,43 @@ function EditProduct() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSaving(true);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
+  setSaving(true);
 
-    try {
-      const data = new FormData();
-      data.append('name', formData.name);
-      data.append('description', formData.description);
-      data.append('price', formData.price);
-      data.append('stock', formData.stock);
-      data.append('category', formData.category);
-      data.append('size', formData.size);
-      data.append('condition', formData.condition);
-      data.append('is_active', formData.is_active);
-      
-      if (formData.instagram_link) {
-        data.append('instagram_link', formData.instagram_link);
-      }
-      if (formData.tiktok_link) {
-        data.append('tiktok_link', formData.tiktok_link);
-      }
-      
-      if (imageFile) {
-        data.append('image', imageFile);
-      }
-
-      await updateProduct(id, data);
-      alert('Product updated successfully!');
-      navigate('/admin/products');
-    } catch (err) {
-      console.error('Error updating product:', err);
-      setError(err.response?.data?.detail || 'Failed to update product. Please try again.');
-    } finally {
-      setSaving(false);
+  try {
+    const data = new FormData();
+    data.append('name', formData.name);
+    data.append('description', formData.description);
+    data.append('price', formData.price);
+    data.append('stock', formData.stock);
+    data.append('category', formData.category);
+    data.append('size', formData.size);
+    data.append('condition', formData.condition);
+    data.append('is_active', formData.is_active);
+    
+    if (formData.instagram_link) {
+      data.append('instagram_link', formData.instagram_link);
     }
-  };
+    if (formData.tiktok_link) {
+      data.append('tiktok_link', formData.tiktok_link);
+    }
+    
+    if (imageFile) {
+      data.append('image', imageFile);
+    }
+
+    await updateProduct(id, data);
+    alert('Product updated successfully!');
+    navigate('/admin/products');
+  } catch (err) {
+    console.error('Error updating product:', err);
+    setError(err.response?.data?.detail || 'Failed to update product. Please try again.');
+  } finally {
+    setSaving(false);
+  }
+};
 
   if (loading) {
     return (

@@ -9,7 +9,7 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from decouple import config
 
-from .models import Product, Order, OrderItem
+from .models import Product, Order, OrderItem, ProductImage, ProductVideo
 from .serializers import (
     ProductSerializer, RegisterSerializer, UserSerializer,
     OrderSerializer, OrderCreateSerializer
@@ -201,7 +201,7 @@ def admin_all_products(request):
     serializer = ProductSerializer(products, many=True)
     return Response(serializer.data)
 
-@api_view(['PUT'])
+@api_view(['PUT', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def admin_update_product(request, pk):
     """Update product"""
@@ -213,11 +213,58 @@ def admin_update_product(request, pk):
     except Product.DoesNotExist:
         return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
     
-    serializer = ProductSerializer(product, data=request.data, partial=True)
-    if serializer.is_valid():
-        serializer.save()
+    try:
+        # Update basic fields
+        product.name = request.data.get('name', product.name)
+        product.description = request.data.get('description', product.description)
+        product.price = request.data.get('price', product.price)
+        product.stock = request.data.get('stock', product.stock)
+        product.category = request.data.get('category', product.category)
+        product.size = request.data.get('size', product.size)
+        product.condition = request.data.get('condition', product.condition)
+        product.instagram_link = request.data.get('instagram_link', product.instagram_link)
+        product.tiktok_link = request.data.get('tiktok_link', product.tiktok_link)
+        
+        if 'is_active' in request.data:
+            product.is_active = request.data.get('is_active', 'true').lower() == 'true'
+        
+        # Update image if provided
+        if 'image' in request.FILES:
+            product.image = request.FILES['image']
+        
+        product.save()
+        
+        # Handle additional images if provided
+        if 'additional_images' in request.FILES:
+            # Delete old additional images if replacing
+            if request.data.get('replace_images') == 'true':
+                product.additional_images.all().delete()
+            
+            additional_images = request.FILES.getlist('additional_images')
+            for index, image_file in enumerate(additional_images):
+                ProductImage.objects.create(
+                    product=product,
+                    image=image_file,
+                    order=index
+                )
+        
+        # Handle video if provided
+        if 'video' in request.FILES:
+            # Delete old video if exists
+            if hasattr(product, 'video'):
+                product.video.delete()
+            
+            ProductVideo.objects.create(
+                product=product,
+                video=request.FILES['video'],
+                thumbnail=request.FILES.get('video_thumbnail')
+            )
+        
+        serializer = ProductSerializer(product)
         return Response(serializer.data)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        print(f"Error updating product: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
@@ -236,15 +283,49 @@ def admin_delete_product(request, pk):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def admin_create_product(request):
-    """Create new product"""
+    """Create new product with additional images and video"""
     if not (request.user.is_staff or request.user.is_superuser):
         return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
     
-    serializer = ProductSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
+    try:
+        # Create product
+        product = Product.objects.create(
+            name=request.data.get('name'),
+            description=request.data.get('description', ''),
+            price=request.data.get('price'),
+            stock=request.data.get('stock'),
+            category=request.data.get('category'),
+            size=request.data.get('size', 'one_size'),
+            condition=request.data.get('condition', 'good'),
+            instagram_link=request.data.get('instagram_link', ''),
+            tiktok_link=request.data.get('tiktok_link', ''),
+            image=request.FILES.get('image'),
+            is_active=request.data.get('is_active', 'true').lower() == 'true'
+        )
+        
+        # Handle additional images
+        additional_images = request.FILES.getlist('additional_images')
+        for index, image_file in enumerate(additional_images):
+            ProductImage.objects.create(
+                product=product,
+                image=image_file,
+                order=index
+            )
+        
+        # Handle video
+        video_file = request.FILES.get('video')
+        if video_file:
+            ProductVideo.objects.create(
+                product=product,
+                video=video_file,
+                thumbnail=request.FILES.get('video_thumbnail')
+            )
+        
+        serializer = ProductSerializer(product)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        print(f"Error creating product: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

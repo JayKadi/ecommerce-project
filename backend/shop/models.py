@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils.text import slugify
+import uuid
 
 class Product(models.Model):
     CONDITION_CHOICES = [
@@ -37,11 +39,20 @@ class Product(models.Model):
     
     # Status fields
     is_active = models.BooleanField(default=True)
-    slug = models.SlugField(unique=True, blank=True)
+    slug = models.SlugField(unique=True, blank=True, max_length=300)
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            # Generate slug from name
+            base_slug = slugify(self.name)
+            # Add unique identifier to ensure uniqueness
+            unique_id = str(uuid.uuid4())[:8]
+            self.slug = f"{base_slug}-{unique_id}"
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return self.name

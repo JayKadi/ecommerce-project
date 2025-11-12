@@ -73,45 +73,55 @@ function AddProduct() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  e.preventDefault();
+  setError('');
+  setLoading(true);
 
-    try {
-      const data = new FormData();
-      data.append('name', formData.name);
-      data.append('description', formData.description);
-      data.append('price', formData.price);
-      data.append('stock', formData.stock);
-      data.append('category', formData.category);
-      data.append('size', formData.size);
-      data.append('condition', formData.condition);
-      data.append('is_active', formData.is_active);
-      
-      if (formData.instagram_link) {
-        data.append('instagram_link', formData.instagram_link);
-      }
-      if (formData.tiktok_link) {
-        data.append('tiktok_link', formData.tiktok_link);
-      }
-      
-      if (imageFile) {
-        data.append('image', imageFile);
-      }
-
-      // Note: Additional images and video will need separate API calls after product creation
-      // For now, we'll just create the basic product
-      
-      await createProduct(data);
-      alert('Product added successfully!');
-      navigate('/admin/products');
-    } catch (err) {
-      console.error('Error adding product:', err);
-      setError(err.response?.data?.detail || 'Failed to add product. Please try again.');
-    } finally {
-      setLoading(false);
+  try {
+    const data = new FormData();
+    data.append('name', formData.name);
+    data.append('description', formData.description);
+    data.append('price', formData.price);
+    data.append('stock', formData.stock);
+    data.append('category', formData.category);
+    data.append('size', formData.size);
+    data.append('condition', formData.condition);
+    data.append('is_active', formData.is_active);
+    
+    if (formData.instagram_link) {
+      data.append('instagram_link', formData.instagram_link);
     }
-  };
+    if (formData.tiktok_link) {
+      data.append('tiktok_link', formData.tiktok_link);
+    }
+    
+    // Main image
+    if (imageFile) {
+      data.append('image', imageFile);
+    }
+
+    // Additional images
+    if (additionalImages.length > 0) {
+      additionalImages.forEach((image) => {
+        data.append('additional_images', image);
+      });
+    }
+
+    // Video
+    if (videoFile) {
+      data.append('video', videoFile);
+    }
+    
+    await createProduct(data);
+    alert('Product added successfully!');
+    navigate('/admin/products');
+  } catch (err) {
+    console.error('Error adding product:', err);
+    setError(err.response?.data?.detail || 'Failed to add product. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-100 py-8">
