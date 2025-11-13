@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { useNavigate } from 'react-router-dom';
+
 
 function Cart() {
+  const navigate = useNavigate();
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
 
   if (cartItems.length === 0) {
@@ -116,12 +119,12 @@ function Cart() {
               </div>
             </div>
 
-            <Link 
-  to="/checkout"
-  className="block w-full bg-blue-600 text-center text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+           <button 
+  onClick={() => navigate('/checkout')}
+  className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold text-lg"
 >
   Proceed to Checkout
-</Link>
+</button>
             <Link 
               to="/"
               className="block text-center mt-4 text-blue-600 hover:text-blue-700"

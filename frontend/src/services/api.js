@@ -33,6 +33,5 @@ export const deleteProduct = (id) => api.delete(`/products/${id}/`);
 // Order API calls
 export const getOrders = () => api.get('/orders/');
 export const getOrder = (id) => api.get(`/orders/${id}/`);
-export const createOrder = (data) => api.post('/orders/', data);
-
+export const createOrder = (data) => api.post('/orders/create/', data);
 export default api;
