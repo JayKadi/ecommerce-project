@@ -12,7 +12,7 @@ import LoginPromptModal from './components/LoginPromptModal';
 import SideLoginPrompt from './components/SideLoginPrompt';
 import AddProduct from './components/admin/AddProduct';
 import EditProduct from './components/admin/EditProduct';
-
+import PaymentCallback from './components/PaymentCallback';
 
 // Admin components
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
@@ -37,6 +37,7 @@ function App() {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/order-confirmation/:id" element={<OrderConfirmation />} />
           <Route path="/orders" element={<Orders />} />
+          <Route path="/payment-callback" element={<PaymentCallback />} />
 
           {/* Admin Routes - Protected */}
           <Route

@@ -8,8 +8,10 @@ from django.contrib.auth.models import User
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from decouple import config
+from .pesapal import pesapal_client
+from django.conf import settings
 
-from .models import Product, Order, OrderItem, ProductImage, ProductVideo
+from .models import Product, Order, OrderItem, ProductImage, ProductVideo, DeliveryZone
 from .serializers import (
     ProductSerializer, RegisterSerializer, UserSerializer,
     OrderSerializer, OrderCreateSerializer
@@ -368,3 +370,275 @@ def admin_update_order_status(request, pk):
         return Response(serializer.data)
     
     return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
+@api_view(['GET'])
+def get_delivery_zones(request):
+    """Get all active delivery zones"""
+    zones = DeliveryZone.objects.filter(is_active=True)
+    data = [
+        {
+            'city': zone.city,
+            'delivery_fee': str(zone.delivery_fee),
+            'estimated_days': zone.estimated_days
+        }
+        for zone in zones
+    ]
+    return Response(data)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_order(request):
+    """Create order and initiate Pesapal payment"""
+    try:
+        items_data = request.data.get('items', [])
+        
+        if not items_data:
+            return Response({'error': 'No items in order'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get delivery zone
+        city = request.data.get('shipping_city')
+        try:
+            delivery_zone = DeliveryZone.objects.get(city=city, is_active=True)
+            delivery_fee = delivery_zone.delivery_fee
+            estimated_days = delivery_zone.estimated_days
+        except DeliveryZone.DoesNotExist:
+            delivery_fee = 0
+            estimated_days = 3
+        
+        # Create order
+        order = Order.objects.create(
+            user=request.user,
+            total_amount=request.data.get('total_amount'),
+            shipping_address=request.data.get('shipping_address'),
+            shipping_city=city,
+            shipping_postal_code=request.data.get('shipping_postal_code', ''),
+            shipping_country=request.data.get('shipping_country'),
+            phone_number=request.data.get('phone_number'),
+            whatsapp_number=request.data.get('whatsapp_number', ''),
+            delivery_fee=delivery_fee,
+            estimated_delivery_days=estimated_days,
+            status='pending',
+            payment_status='pending'
+        )
+        
+        # Create order items and update stock
+        for item in items_data:
+            product = Product.objects.get(id=item['product_id'])
+            
+            if product.stock < item['quantity']:
+                order.delete()
+                return Response(
+                    {'error': f'Insufficient stock for {product.name}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            OrderItem.objects.create(
+                order=order,
+                product=product,
+                quantity=item['quantity'],
+                price=item['price']
+            )
+            
+            product.stock -= item['quantity']
+            product.save()
+        
+        # Create unique merchant reference
+        merchant_ref = f"KT-{order.id}-{int(order.created_at.timestamp())}"
+        order.pesapal_merchant_reference = merchant_ref
+        order.save()
+        
+        # Initiate Pesapal payment
+        try:
+            # Get callback URL (where Pesapal redirects after payment)
+            frontend_url = request.build_absolute_uri('/').replace('/api/', '').rstrip('/')
+            callback_url = f"{frontend_url}/payment-callback"
+            
+            # Format customer name
+            customer_name = f"{request.user.first_name} {request.user.last_name}".strip()
+            if not customer_name:
+                customer_name = request.user.username
+            
+            # Submit order to Pesapal
+            pesapal_response = pesapal_client.submit_order(
+                order_id=merchant_ref,
+                amount=float(order.total_amount),
+                description=f"Kadi Thrift Order #{order.id}",
+                callback_url=callback_url,
+                customer_email=request.user.email,
+                customer_phone=request.data.get('phone_number'),
+                customer_name=customer_name
+            )
+            
+            print("Pesapal response:", pesapal_response)
+            
+            # Check if order submission was successful
+            if pesapal_response.get('status') == '200':
+                order_tracking_id = pesapal_response.get('order_tracking_id')
+                redirect_url = pesapal_response.get('redirect_url')
+                
+                order.pesapal_order_tracking_id = order_tracking_id
+                order.save()
+                
+                serializer = OrderSerializer(order)
+                return Response({
+                    **serializer.data,
+                    'payment_url': redirect_url,
+                    'message': 'Order created successfully. Redirecting to payment...'
+                }, status=status.HTTP_201_CREATED)
+            else:
+                # Payment initiation failed
+                order.delete()  # Rollback
+                return Response({
+                    'error': 'Failed to initiate payment',
+                    'details': pesapal_response
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as payment_error:
+            print(f"Pesapal error: {str(payment_error)}")
+            import traceback
+            traceback.print_exc()
+            order.delete()  # Rollback
+            return Response({
+                'error': 'Payment initiation failed',
+                'details': str(payment_error)
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+    except Product.DoesNotExist:
+        return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        print(f"Error creating order: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_order(request, pk):
+    """Get a specific order"""
+    try:
+        # Users can only view their own orders, unless they're admin
+        if request.user.is_staff or request.user.is_superuser:
+            order = Order.objects.get(pk=pk)
+        else:
+            order = Order.objects.get(pk=pk, user=request.user)
+        
+        serializer = OrderSerializer(order)
+        return Response(serializer.data)
+    except Order.DoesNotExist:
+        return Response({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
+@api_view(['GET'])
+@permission_classes([AllowAny])  # Pesapal needs to access this
+def pesapal_callback(request):
+    """Handle Pesapal payment callback (IPN)"""
+    try:
+        # Get parameters from Pesapal callback
+        order_tracking_id = request.GET.get('OrderTrackingId')
+        merchant_reference = request.GET.get('OrderMerchantReference')
+        
+        print(f"Pesapal callback received - Tracking ID: {order_tracking_id}, Ref: {merchant_reference}")
+        
+        if not order_tracking_id:
+            return Response({'error': 'Missing order tracking ID'}, status=400)
+        
+        # Get transaction status from Pesapal
+        try:
+            status_response = pesapal_client.get_transaction_status(order_tracking_id)
+            print("Transaction status:", status_response)
+            
+            # Find order
+            try:
+                if merchant_reference:
+                    order = Order.objects.get(pesapal_merchant_reference=merchant_reference)
+                else:
+                    order = Order.objects.get(pesapal_order_tracking_id=order_tracking_id)
+                
+                # Update order based on payment status
+                payment_status = status_response.get('payment_status_description', '').lower()
+                payment_method = status_response.get('payment_method', '')
+                
+                if payment_status == 'completed' or status_response.get('status_code') == 1:
+                    order.payment_status = 'completed'
+                    order.status = 'processing'
+                    order.payment_method = payment_method
+                    order.save()
+                    print(f"Payment successful for Order #{order.id}")
+                    
+                elif payment_status in ['failed', 'invalid']:
+                    order.payment_status = 'failed'
+                    order.status = 'cancelled'
+                    order.save()
+                    
+                    # Restore stock
+                    for item in order.items.all():
+                        product = item.product
+                        product.stock += item.quantity
+                        product.save()
+                    
+                    print(f"Payment failed for Order #{order.id}")
+                
+                return Response({
+                    'status': 'success',
+                    'message': 'Payment status updated',
+                    'order_id': order.id,
+                    'payment_status': order.payment_status
+                })
+                
+            except Order.DoesNotExist:
+                print(f"Order not found: {merchant_reference or order_tracking_id}")
+                return Response({'error': 'Order not found'}, status=404)
+                
+        except Exception as status_error:
+            print(f"Error getting transaction status: {str(status_error)}")
+            return Response({'error': str(status_error)}, status=400)
+        
+    except Exception as e:
+        print(f"Callback error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return Response({'error': str(e)}, status=400)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def verify_payment(request, order_id):
+    """Verify payment status for an order"""
+    try:
+        # Get order
+        try:
+            if request.user.is_staff or request.user.is_superuser:
+                order = Order.objects.get(id=order_id)
+            else:
+                order = Order.objects.get(id=order_id, user=request.user)
+        except Order.DoesNotExist:
+            return Response({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if order has Pesapal tracking ID
+        if not order.pesapal_order_tracking_id:
+            return Response({
+                'error': 'No payment initiated for this order'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get transaction status from Pesapal
+        try:
+            status_response = pesapal_client.get_transaction_status(order.pesapal_order_tracking_id)
+            
+            payment_status = status_response.get('payment_status_description', '').lower()
+            payment_method = status_response.get('payment_method', '')
+            
+            # Update order
+            if payment_status == 'completed' or status_response.get('status_code') == 1:
+                order.payment_status = 'completed'
+                order.status = 'processing'
+                order.payment_method = payment_method
+                order.save()
+            
+            serializer = OrderSerializer(order)
+            return Response({
+                'order': serializer.data,
+                'pesapal_status': status_response
+            })
+            
+        except Exception as e:
+            return Response({
+                'error': 'Failed to verify payment',
+                'details': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+    except Exception as e:
+        print(f"Verification error: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

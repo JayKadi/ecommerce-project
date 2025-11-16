@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 
-
 function Cart() {
   const navigate = useNavigate();
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
@@ -43,7 +42,7 @@ function Cart() {
               <Link to={`/product/${item.id}`} className="flex-shrink-0">
                 {item.image ? (
                   <img 
-                    src={`http://127.0.0.1:8000${item.image}`} 
+                    src={item.image.replace('http://localhost:8000', 'http://127.0.0.1:8000')}
                     alt={item.name}
                     className="w-24 h-24 object-cover rounded"
                   />
@@ -63,7 +62,7 @@ function Cart() {
                   {item.name}
                 </Link>
                 <p className="text-gray-600 text-sm">{item.category}</p>
-                <p className="text-xl font-bold text-green-600 mt-2">${item.price}</p>
+                <p className="text-xl font-bold text-green-600 mt-2">KES {item.price}</p>
               </div>
 
               {/* Quantity Controls */}
@@ -93,7 +92,7 @@ function Cart() {
                   </button>
                 </div>
 
-                <p className="font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
+                <p className="font-semibold">KES {(item.price * item.quantity).toFixed(2)}</p>
               </div>
             </div>
           ))}
@@ -107,24 +106,25 @@ function Cart() {
             <div className="space-y-2 mb-4">
               <div className="flex justify-between">
                 <span>Subtotal:</span>
-                <span className="font-semibold">${getCartTotal().toFixed(2)}</span>
+                <span className="font-semibold">KES {getCartTotal().toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Shipping:</span>
-                <span className="font-semibold">Free</span>
+                <span className="font-semibold">Calculated at checkout</span>
               </div>
               <div className="border-t pt-2 flex justify-between text-lg font-bold">
                 <span>Total:</span>
-                <span className="text-green-600">${getCartTotal().toFixed(2)}</span>
+                <span className="text-green-600">KES {getCartTotal().toFixed(2)}</span>
               </div>
             </div>
 
-           <button 
-  onClick={() => navigate('/checkout')}
-  className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold text-lg"
->
-  Proceed to Checkout
-</button>
+            <button 
+              onClick={() => navigate('/checkout')}
+              className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold text-lg"
+            >
+              Proceed to Checkout
+            </button>
+
             <Link 
               to="/"
               className="block text-center mt-4 text-blue-600 hover:text-blue-700"

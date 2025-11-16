@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, Order, OrderItem, ProductImage, ProductVideo
+from .models import Product, Order, OrderItem, ProductImage, ProductVideo, DeliveryZone
 
 # Inline admin for additional images
 class ProductImageInline(admin.TabularInline):
@@ -81,3 +81,11 @@ class ProductImageAdmin(admin.ModelAdmin):
 class ProductVideoAdmin(admin.ModelAdmin):
     list_display = ['product', 'video', 'thumbnail']
     list_filter = ['product']
+
+@admin.register(DeliveryZone)
+class DeliveryZoneAdmin(admin.ModelAdmin):
+    list_display = ['city', 'delivery_fee', 'estimated_days', 'is_active']
+    list_editable = ['delivery_fee', 'estimated_days', 'is_active']
+    search_fields = ['city']
+
+    

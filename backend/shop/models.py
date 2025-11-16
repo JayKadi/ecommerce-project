@@ -95,6 +95,17 @@ class Order(models.Model):
     shipping_postal_code = models.CharField(max_length=20)
     shipping_country = models.CharField(max_length=100)
     phone_number = models.CharField(max_length=20)
+    whatsapp_number = models.CharField(max_length=20, blank=True)
+    
+    # Delivery information
+    delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    estimated_delivery_days = models.IntegerField(default=3)
+    
+    # Pesapal payment fields (NEW)
+    pesapal_order_tracking_id = models.CharField(max_length=255, blank=True, null=True)
+    pesapal_merchant_reference = models.CharField(max_length=255, blank=True, null=True)
+    payment_status = models.CharField(max_length=20, default='pending')
+    payment_method = models.CharField(max_length=50, blank=True, null=True)  # mpesa, card, etc.
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -104,7 +115,6 @@ class Order(models.Model):
     
     def __str__(self):
         return f"Order #{self.id} - {self.user.username}"
-
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -116,3 +126,15 @@ class OrderItem(models.Model):
     
     def get_total(self):
         return self.quantity * self.price
+    
+class DeliveryZone(models.Model):
+    city = models.CharField(max_length=100, unique=True)
+    delivery_fee = models.DecimalField(max_digits=10, decimal_places=2)
+    estimated_days = models.IntegerField(default=3)
+    is_active = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return f"{self.city} - KES {self.delivery_fee}"
+    
+    class Meta:
+        ordering = ['city']

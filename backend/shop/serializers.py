@@ -56,16 +56,20 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     user_username = serializers.CharField(source='user.username', read_only=True)
-    
+
     class Meta:
         model = Order
         fields = [
             'id', 'user', 'user_username', 'status', 'total_amount',
             'shipping_address', 'shipping_city', 'shipping_postal_code',
-            'shipping_country', 'phone_number', 'created_at', 'updated_at', 'items'
+            'shipping_country', 'phone_number', 'whatsapp_number',
+            'delivery_fee', 'estimated_delivery_days', 
+            'pesapal_order_tracking_id', 'pesapal_merchant_reference',
+            'payment_status', 'payment_method',
+            'items', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['user', 'created_at', 'updated_at']
-
+        read_only_fields = ['id', 'created_at', 'updated_at']
+        
 class OrderCreateSerializer(serializers.ModelSerializer):
     items = serializers.ListField(write_only=True)
     

@@ -1,16 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { createOrder } from '../services/api';
+import { createOrder, getDeliveryZones } from '../services/api';
 
 function Checkout() {
   const navigate = useNavigate();
-  const { cartItems, getCartTotal, clearCart } = useCart();  // Changed from 'cart' to 'cartItems'
+  const { cartItems, getCartTotal, clearCart } = useCart();
   const { user } = useAuth();
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [deliveryZones, setDeliveryZones] = useState([]);
+  const [selectedZone, setSelectedZone] = useState(null);
   
   const [formData, setFormData] = useState({
     shipping_address: '',
@@ -18,7 +20,23 @@ function Checkout() {
     shipping_postal_code: '',
     shipping_country: 'Kenya',
     phone_number: '',
+    whatsapp_number: '',
   });
+
+  useEffect(() => {
+    fetchDeliveryZones();
+  }, []);
+
+  const fetchDeliveryZones = async () => {
+    try {
+      console.log('Fetching delivery zones...');
+      const response = await getDeliveryZones();
+      console.log('Delivery zones response:', response.data);
+      setDeliveryZones(response.data);
+    } catch (error) {
+      console.error('Error fetching delivery zones:', error);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,6 +44,25 @@ function Checkout() {
       ...formData,
       [name]: value
     });
+
+    // Update selected zone when city changes
+    if (name === 'shipping_city') {
+      const zone = deliveryZones.find(z => z.city === value);
+      setSelectedZone(zone || null);
+      console.log('Selected zone:', zone);
+    }
+  };
+
+  const getSubtotal = () => {
+    return getCartTotal();
+  };
+
+  const getDeliveryFee = () => {
+    return selectedZone ? parseFloat(selectedZone.delivery_fee) : 0;
+  };
+
+  const getTotalWithDelivery = () => {
+    return getSubtotal() + getDeliveryFee();
   };
 
   const handleSubmit = async (e) => {
@@ -38,11 +75,11 @@ function Checkout() {
       const orderData = {
         ...formData,
         items: cartItems.map(item => ({
-          product_id: item.id,  // Changed from item.product.id
+          product_id: item.id,
           quantity: item.quantity,
-          price: item.price  // Changed from item.product.price
+          price: item.price
         })),
-        total_amount: getCartTotal()  // Changed from getTotalPrice()
+        total_amount: getTotalWithDelivery()
       };
 
       console.log('Submitting order:', orderData);
@@ -51,6 +88,12 @@ function Checkout() {
       const response = await createOrder(orderData);
       
       console.log('Order created:', response.data);
+     // Redirect to Pesapal payment page
+    if (response.data.payment_url) {
+      window.location.href = response.data.payment_url;
+    } else {
+      setError('Payment URL not received. Please contact support.');
+    }  
 
       // Clear cart
       clearCart();
@@ -66,7 +109,7 @@ function Checkout() {
     }
   };
 
-  if (cartItems.length === 0) {  // Changed from cart.length
+  if (cartItems.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-16 text-center">
         <h2 className="text-3xl font-bold mb-4">Your cart is empty</h2>
@@ -115,33 +158,61 @@ function Checkout() {
                 <p className="text-xs text-gray-500 mt-1">Format: 254712345678 (without +)</p>
               </div>
 
+              {/* WhatsApp Number */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  WhatsApp Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  name="whatsapp_number"
+                  value={formData.whatsapp_number}
+                  onChange={handleChange}
+                  placeholder="254712345678"
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">We'll contact you here for delivery coordination</p>
+              </div>
+
+              {/* City Dropdown */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Delivery City <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="shipping_city"
+                  value={formData.shipping_city}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select your city</option>
+                  {deliveryZones.map((zone) => (
+                    <option key={zone.city} value={zone.city}>
+                      {zone.city} - KES {zone.delivery_fee} ({zone.estimated_days} days)
+                    </option>
+                  ))}
+                </select>
+                {selectedZone && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ Delivery fee: KES {selectedZone.delivery_fee} | 
+                    Estimated: {selectedZone.estimated_days} business days
+                  </p>
+                )}
+              </div>
+
               {/* Shipping Address */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Shipping Address <span className="text-red-500">*</span>
+                  Specific Address <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   name="shipping_address"
                   value={formData.shipping_address}
                   onChange={handleChange}
                   rows="3"
-                  placeholder="Street address, apartment, building, etc."
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              {/* City */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  City <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="shipping_city"
-                  value={formData.shipping_city}
-                  onChange={handleChange}
-                  placeholder="Nairobi"
+                  placeholder="Building name, street, landmark, etc."
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -172,8 +243,8 @@ function Checkout() {
                     name="shipping_country"
                     value={formData.shipping_country}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                    readOnly
                   />
                 </div>
               </div>
@@ -181,11 +252,15 @@ function Checkout() {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !selectedZone}
                 className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold text-lg disabled:bg-gray-400 mt-6"
               >
-                {loading ? 'Processing...' : '💳 Place Order & Pay with M-Pesa'}
+                {loading ? 'Processing...' : `💳 Pay KES ${getTotalWithDelivery().toFixed(2)} with M-Pesa`}
               </button>
+
+              {!selectedZone && formData.shipping_city === '' && (
+                <p className="text-sm text-gray-500 text-center">Please select a delivery city</p>
+              )}
             </form>
           </div>
         </div>
@@ -197,7 +272,7 @@ function Checkout() {
             
             {/* Cart Items */}
             <div className="space-y-3 mb-4">
-              {cartItems.map((item) => (  // Changed from cart
+              {cartItems.map((item) => (
                 <div key={item.id} className="flex gap-3">
                   <img
                     src={item.image?.replace('http://localhost:8000', 'http://127.0.0.1:8000')}
@@ -218,26 +293,45 @@ function Checkout() {
             <div className="border-t pt-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Subtotal</span>
-                <span>KES {getCartTotal().toFixed(2)}</span>
+                <span>KES {getSubtotal().toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>Shipping</span>
-                <span className="text-green-600">FREE</span>
+                <span>Delivery Fee</span>
+                {selectedZone ? (
+                  <span className="text-blue-600 font-semibold">
+                    KES {getDeliveryFee().toFixed(2)}
+                  </span>
+                ) : (
+                  <span className="text-gray-400">Select city</span>
+                )}
               </div>
               <div className="flex justify-between text-lg font-bold border-t pt-2">
                 <span>Total</span>
-                <span className="text-green-600">KES {getCartTotal().toFixed(2)}</span>
+                <span className="text-green-600">KES {getTotalWithDelivery().toFixed(2)}</span>
               </div>
             </div>
 
-            {/* Payment Info */}
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800 font-semibold mb-2">
-                💳 Payment Method
-              </p>
-              <p className="text-xs text-blue-700">
-                You'll receive an M-Pesa STK push on your phone to complete payment.
-              </p>
+            {/* Payment & Delivery Info */}
+            <div className="mt-6 space-y-3">
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-800 font-semibold mb-1">
+                  💳 Payment Method
+                </p>
+                <p className="text-xs text-blue-700">
+                  M-Pesa STK push to your phone
+                </p>
+              </div>
+
+              {selectedZone && (
+                <div className="p-4 bg-green-50 rounded-lg">
+                  <p className="text-sm text-green-800 font-semibold mb-1">
+                    📦 Delivery
+                  </p>
+                  <p className="text-xs text-green-700">
+                    Expected in {selectedZone.estimated_days} business days to {formData.shipping_city}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

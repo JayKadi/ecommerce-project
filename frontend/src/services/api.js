@@ -29,6 +29,8 @@ export const getProduct = (id) => api.get(`/products/${id}/`);
 export const createProduct = (data) => api.post('/products/', data);
 export const updateProduct = (id, data) => api.put(`/products/${id}/`, data);
 export const deleteProduct = (id) => api.delete(`/products/${id}/`);
+// Delivery zones
+export const getDeliveryZones = () => api.get('/delivery-zones/');
 
 // Order API calls
 export const getOrders = () => api.get('/orders/');
