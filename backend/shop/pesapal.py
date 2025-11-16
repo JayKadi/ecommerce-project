@@ -108,7 +108,6 @@ class PesapalAPI:
             'amount': float(amount),
             'description': description,
             'callback_url': callback_url,
-            'notification_id': settings.PESAPAL_IPN_URL if settings.PESAPAL_IPN_URL else '',
             'billing_address': {
                 'email_address': customer_email,
                 'phone_number': customer_phone,
