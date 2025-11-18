@@ -24,19 +24,21 @@ function Navbar() {
             >
               Products
             </Link>
-            {isAuthenticated && (
-  <Link 
-    to="/orders" 
-    className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
-  >
-    Orders
-  </Link>
-)}
- {/* Admin Dashboard Link - Only for logged in users */}
+
             {isAuthenticated && (
               <Link 
-                to="/admin" 
+                to="/orders" 
                 className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+              >
+                Orders
+              </Link>
+            )}
+
+            {/* Admin Dashboard Link - ONLY for admin users */}
+            {isAuthenticated && user?.is_staff && (
+              <Link 
+                to="/admin" 
+                className="text-purple-700 hover:text-purple-900 font-medium transition-colors"
               >
                 ⚙️ Admin
               </Link>
@@ -95,7 +97,6 @@ function Navbar() {
                   Register
                 </Link>
               </div>
-              
             )}
           </div>
         </div>
