@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProduct } from '../services/api';
 import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
 
 function ProductDetail() {
   const { id } = useParams();
@@ -15,7 +14,6 @@ function ProductDetail() {
   const [allImages, setAllImages] = useState([]);
   
   const { addToCart } = useCart();
-  const { isAuthenticated, setShowLoginPrompt } = useAuth();
 
   useEffect(() => {
     fetchProduct();
@@ -80,24 +78,23 @@ function ProductDetail() {
   };
 
   const handleAddToCart = () => {
-    if (!isAuthenticated) {
-      setShowLoginPrompt(true);
-      return;
-    }
-
-    if (product.stock === 0) {
-      alert('This item is out of stock');
-      return;
-    }
-
-    if (quantity > product.stock) {
-      alert(`Only ${product.stock} items available`);  // FIXED
-      return;
-    }
-
-    addToCart(product, quantity);
-    alert('Added to cart!');
-  };
+  // Check stock
+  if (product.stock === 0) {
+    alert('This item is out of stock');
+    return;
+  }
+  
+  if (quantity > product.stock) {
+    alert(`Only ${product.stock} items available`);
+    return;
+  }
+  
+  // Add to cart (works for both guests and logged-in users)
+  addToCart(product);
+  
+  // Show success message
+  alert(`Added ${quantity} item(s) to cart!`);
+};
 
   const getConditionColor = (condition) => {
     const colors = {
