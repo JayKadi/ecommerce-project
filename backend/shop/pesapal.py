@@ -67,6 +67,8 @@ class PesapalAPI:
             return response.json()
         except Exception as e:
             print(f"Error registering IPN: {str(e)}")
+            if hasattr(response, 'text'):
+                print(f"Response: {response.text}")
             raise
     
     def submit_order(self, order_id, amount, description, callback_url, 
@@ -108,12 +110,13 @@ class PesapalAPI:
             'amount': float(amount),
             'description': description,
             'callback_url': callback_url,
+            'notification_id': settings.PESAPAL_IPN_ID,  # Will use IPN ID once registered
             'billing_address': {
                 'email_address': customer_email,
                 'phone_number': customer_phone,
                 'country_code': 'KE',
-                'first_name': customer_name.split()[0] if customer_name else '',
-                'last_name': ' '.join(customer_name.split()[1:]) if len(customer_name.split()) > 1 else '',
+                'first_name': customer_name.split()[0] if customer_name else 'Customer',
+                'last_name': ' '.join(customer_name.split()[1:]) if len(customer_name.split()) > 1 else 'User',
                 'line_1': '',
                 'line_2': '',
                 'city': '',
@@ -124,13 +127,27 @@ class PesapalAPI:
         }
         
         try:
+            print("\n" + "=" * 60)
+            print("📤 SUBMITTING ORDER TO PESAPAL")
+            print("=" * 60)
+            print(f"URL: {url}")
+            print(f"\n📦 PAYLOAD BEING SENT:")
+            print(json.dumps(payload, indent=2))
+            print("=" * 60)
+            
             response = requests.post(url, json=payload, headers=headers)
+            
+            print(f"\n📥 PESAPAL RESPONSE:")
+            print(f"Status Code: {response.status_code}")
+            print(f"Response Body: {response.text}")
+            print("=" * 60 + "\n")
+            
             response.raise_for_status()
             return response.json()
         except Exception as e:
-            print(f"Error submitting order: {str(e)}")
-            if hasattr(response, 'text'):
-                print(f"Response: {response.text}")
+            print(f"\n❌ ERROR: {str(e)}")
+            if 'response' in locals():
+                print(f"Response text: {response.text}")
             raise
     
     def get_transaction_status(self, order_tracking_id):

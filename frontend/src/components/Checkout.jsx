@@ -24,14 +24,14 @@ function Checkout() {
   });
 
   useEffect(() => {
-    fetchDeliveryZones();
-  }, []);
+    if (user) {
+      fetchDeliveryZones();
+    }
+  }, [user]);
 
   const fetchDeliveryZones = async () => {
     try {
-      console.log('Fetching delivery zones...');
       const response = await getDeliveryZones();
-      console.log('Delivery zones response:', response.data);
       setDeliveryZones(response.data);
     } catch (error) {
       console.error('Error fetching delivery zones:', error);
@@ -45,11 +45,9 @@ function Checkout() {
       [name]: value
     });
 
-    // Update selected zone when city changes
     if (name === 'shipping_city') {
       const zone = deliveryZones.find(z => z.city === value);
       setSelectedZone(zone || null);
-      console.log('Selected zone:', zone);
     }
   };
 
@@ -71,7 +69,6 @@ function Checkout() {
     setLoading(true);
 
     try {
-      // Prepare order data
       const orderData = {
         ...formData,
         items: cartItems.map(item => ({
@@ -84,22 +81,16 @@ function Checkout() {
 
       console.log('Submitting order:', orderData);
 
-      // Create order
       const response = await createOrder(orderData);
       
       console.log('Order created:', response.data);
-     // Redirect to Pesapal payment page
-    if (response.data.payment_url) {
-      window.location.href = response.data.payment_url;
-    } else {
-      setError('Payment URL not received. Please contact support.');
-    }  
 
-      // Clear cart
-      clearCart();
-
-      // Navigate to confirmation page
-      navigate(`/order-confirmation/${response.data.id}`);
+      // Redirect to Pesapal payment page
+      if (response.data.payment_url) {
+        window.location.href = response.data.payment_url;
+      } else {
+        setError('Payment URL not received. Please contact support.');
+      }
       
     } catch (err) {
       console.error('Error creating order:', err);
@@ -109,6 +100,7 @@ function Checkout() {
     }
   };
 
+  // Empty cart check
   if (cartItems.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-16 text-center">
@@ -124,6 +116,83 @@ function Checkout() {
     );
   }
 
+  // Login required check
+  if (!user) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-16">
+        <div className="bg-white rounded-lg shadow-md p-8">
+          <div className="text-center mb-6">
+            <div className="text-6xl mb-4">🔐</div>
+            <h2 className="text-3xl font-bold mb-4">Almost there!</h2>
+            <p className="text-gray-600 mb-2">
+              Please login or create an account to complete your purchase.
+            </p>
+            <p className="text-sm text-gray-500">
+              Your cart items are saved and will be here when you return!
+            </p>
+          </div>
+          
+          {/* Cart Summary */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold mb-2">Your Cart ({cartItems.length} items)</h3>
+            <div className="space-y-2">
+              {cartItems.slice(0, 3).map((item) => (
+                <div key={item.id} className="flex justify-between text-sm">
+                  <span>{item.name} × {item.quantity}</span>
+                  <span>KES {(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+              ))}
+              {cartItems.length > 3 && (
+                <p className="text-xs text-gray-500">...and {cartItems.length - 3} more items</p>
+              )}
+            </div>
+            <div className="border-t mt-2 pt-2 flex justify-between font-bold">
+              <span>Total:</span>
+              <span className="text-green-600">KES {getCartTotal().toFixed(2)}</span>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <button
+              onClick={() => navigate('/login', { state: { from: '/checkout' } })}
+              className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg"
+            >
+              Login to Existing Account
+            </button>
+            
+            <button
+              onClick={() => navigate('/register', { state: { from: '/checkout' } })}
+              className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold text-lg"
+            >
+              Create New Account (Free)
+            </button>
+            
+            <button
+              onClick={() => navigate('/')}
+              className="w-full py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+            >
+              ← Continue Shopping
+            </button>
+          </div>
+
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-800 font-semibold mb-2">
+              ✨ Why create an account?
+            </p>
+            <ul className="text-xs text-blue-700 space-y-1">
+              <li>• Track your orders in real-time</li>
+              <li>• Faster checkout next time</li>
+              <li>• Access order history</li>
+              <li>• Get exclusive deals & updates</li>
+              <li>• Save favorite items</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main checkout form (for logged-in users)
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold mb-8">Checkout</h1>
@@ -151,11 +220,11 @@ function Checkout() {
                   name="phone_number"
                   value={formData.phone_number}
                   onChange={handleChange}
-                  placeholder="254712345678"
+                  placeholder="0712345678"
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">Format: 254712345678 (without +)</p>
+                <p className="text-xs text-gray-500 mt-1">Format: 0712345678</p>
               </div>
 
               {/* WhatsApp Number */}
@@ -168,7 +237,7 @@ function Checkout() {
                   name="whatsapp_number"
                   value={formData.whatsapp_number}
                   onChange={handleChange}
-                  placeholder="254712345678"
+                  placeholder="0712345678"
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
