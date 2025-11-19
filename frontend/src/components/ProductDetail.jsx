@@ -130,11 +130,11 @@ function ProductDetail() {
     return labels[size] || size;
   };
 
-  const handleWhatsAppContact = () => {
-    const message = `Hi! I'm interested in: ${product.name} (KES ${product.price})`;
-    const whatsappUrl = `https://wa.me/254700000000?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-  };
+ const handleWhatsAppContact = () => {
+  const message = `Hi! I'm interested in: ${product.name} (KES ${product.price})`;
+  const whatsappUrl = `https://wa.me/254705807643?text=${encodeURIComponent(message)}`; 
+  window.open(whatsappUrl, '_blank');
+};
 
   if (loading) {
     return (
