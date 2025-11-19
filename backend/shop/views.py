@@ -176,18 +176,22 @@ def admin_dashboard_stats(request):
     
     today = timezone.now().date()
     
-    # Today's orders
-    today_orders = Order.objects.filter(created_at__date=today)
+    # ✅ ONLY COUNT COMPLETED ORDERS (paid orders)
+    completed_orders = Order.objects.filter(payment_status='completed')
+    today_completed_orders = completed_orders.filter(created_at__date=today)
     
     # Statistics
     stats = {
         'total_products': Product.objects.filter(is_active=True).count(),
-        'total_orders': Order.objects.count(),
+        'total_orders': Order.objects.count(),  # All orders
+        'completed_orders': completed_orders.count(),  # Paid orders only
         'pending_orders': Order.objects.filter(status='pending').count(),
-        'today_orders': today_orders.count(),
-        'today_revenue': sum(order.total_amount for order in today_orders),
+        'today_orders': Order.objects.filter(created_at__date=today).count(),  # All today
+        'today_completed_orders': today_completed_orders.count(),  # Paid today
+        'today_revenue': sum(order.total_amount for order in today_completed_orders),  # ✅ Only paid
         'low_stock_items': Product.objects.filter(stock__lte=2, is_active=True).count(),
-        'total_revenue': sum(order.total_amount for order in Order.objects.all()),
+        'total_revenue': sum(order.total_amount for order in completed_orders),  # ✅ Only paid
+        'pending_payment_orders': Order.objects.filter(payment_status='pending').count(),  # NEW
     }
     
     return Response(stats)
@@ -353,18 +357,19 @@ def admin_update_order_status(request, pk):
         return Response({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
     
     new_status = request.data.get('status')
-    old_status = order.status  # Store old status
+    old_status = order.status
     
     if new_status in dict(Order.STATUS_CHOICES):
         order.status = new_status
         order.save()
         
-        # If order is cancelled, restore stock
-        if new_status == 'cancelled' and old_status != 'cancelled':
+        # ✅ Restore stock if order is cancelled AND was previously completed
+        if new_status == 'cancelled' and old_status != 'cancelled' and order.payment_status == 'completed':
             for item in order.items.all():
                 product = item.product
-                product.stock += item.quantity  # Add back the quantity
+                product.stock += item.quantity
                 product.save()
+                print(f"✅ Restored stock for {product.name}: {item.quantity} units")
         
         serializer = OrderSerializer(order)
         return Response(serializer.data)
@@ -419,10 +424,11 @@ def create_order(request):
             payment_status='pending'
         )
         
-        # Create order items and update stock
+        # Create order items - DON'T reduce stock yet!
         for item in items_data:
             product = Product.objects.get(id=item['product_id'])
             
+            # Check stock availability
             if product.stock < item['quantity']:
                 order.delete()
                 return Response(
@@ -430,6 +436,7 @@ def create_order(request):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
+            # Create order item (don't reduce stock yet)
             OrderItem.objects.create(
                 order=order,
                 product=product,
@@ -437,9 +444,7 @@ def create_order(request):
                 price=item['price']
             )
             
-            product.stock -= item['quantity']
-            product.save()
-        
+           
         # Create unique merchant reference
         merchant_ref = f"KT-{order.id}-{int(order.created_at.timestamp())}"
         order.pesapal_merchant_reference = merchant_ref
@@ -524,15 +529,14 @@ def get_order(request, pk):
     except Order.DoesNotExist:
         return Response({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
 @api_view(['GET'])
-@permission_classes([AllowAny])  # Pesapal needs to access this
+@permission_classes([AllowAny])
 def pesapal_callback(request):
     """Handle Pesapal payment callback (IPN)"""
     try:
-        # Get parameters from Pesapal callback
         order_tracking_id = request.GET.get('OrderTrackingId')
         merchant_reference = request.GET.get('OrderMerchantReference')
         
-        print(f"Pesapal callback received - Tracking ID: {order_tracking_id}, Ref: {merchant_reference}")
+        print(f"Pesapal callback - Tracking ID: {order_tracking_id}, Ref: {merchant_reference}")
         
         if not order_tracking_id:
             return Response({'error': 'Missing order tracking ID'}, status=400)
@@ -554,24 +558,31 @@ def pesapal_callback(request):
                 payment_method = status_response.get('payment_method', '')
                 
                 if payment_status == 'completed' or status_response.get('status_code') == 1:
+                    # ✅ PAYMENT SUCCESSFUL - NOW REDUCE STOCK!
+                    if order.payment_status != 'completed':  # Only reduce stock once
+                        for item in order.items.all():
+                            product = item.product
+                            
+                            # Check if stock is still available
+                            if product.stock >= item.quantity:
+                                product.stock -= item.quantity
+                                product.save()
+                                print(f"✅ Reduced stock for {product.name}: {item.quantity} units")
+                            else:
+                                print(f"⚠️ Warning: Insufficient stock for {product.name}")
+                    
                     order.payment_status = 'completed'
                     order.status = 'processing'
                     order.payment_method = payment_method
                     order.save()
-                    print(f"Payment successful for Order #{order.id}")
+                    print(f"✅ Payment successful for Order #{order.id}")
                     
                 elif payment_status in ['failed', 'invalid']:
+                    # ❌ PAYMENT FAILED - No stock reduction
                     order.payment_status = 'failed'
                     order.status = 'cancelled'
                     order.save()
-                    
-                    # Restore stock
-                    for item in order.items.all():
-                        product = item.product
-                        product.stock += item.quantity
-                        product.save()
-                    
-                    print(f"Payment failed for Order #{order.id}")
+                    print(f"❌ Payment failed for Order #{order.id}")
                 
                 return Response({
                     'status': 'success',
@@ -620,8 +631,21 @@ def verify_payment(request, order_id):
             payment_status = status_response.get('payment_status_description', '').lower()
             payment_method = status_response.get('payment_method', '')
             
-            # Update order
+            # Update order if payment successful
             if payment_status == 'completed' or status_response.get('status_code') == 1:
+                # ✅ PAYMENT SUCCESSFUL - NOW REDUCE STOCK!
+                if order.payment_status != 'completed':  # Only reduce stock once
+                    for item in order.items.all():
+                        product = item.product
+                        
+                        # Check if stock is still available
+                        if product.stock >= item.quantity:
+                            product.stock -= item.quantity
+                            product.save()
+                            print(f"✅ Reduced stock for {product.name}: {item.quantity} units")
+                        else:
+                            print(f"⚠️ Warning: Insufficient stock for {product.name}")
+                
                 order.payment_status = 'completed'
                 order.status = 'processing'
                 order.payment_method = payment_method
