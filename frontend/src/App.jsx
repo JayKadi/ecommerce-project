@@ -14,6 +14,7 @@ import AddProduct from './components/admin/AddProduct';
 import EditProduct from './components/admin/EditProduct';
 import PaymentCallback from './components/PaymentCallback';
 import UserDashboard from './components/UserDashboard';
+import OrderDetail from './components/OrderDetail';
 
 // Admin components
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
@@ -40,6 +41,7 @@ function App() {
           <Route path="/orders" element={<Orders />} />
           <Route path="/payment-callback" element={<PaymentCallback />} />
           <Route path="/dashboard" element={<UserDashboard />} />
+          <Route path="/orders/:orderId" element={<OrderDetail />} />
           {/* Admin Routes - Protected */}
           <Route
             path="/admin"

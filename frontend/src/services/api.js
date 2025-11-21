@@ -43,6 +43,6 @@ export const getDeliveryZones = () => api.get('/delivery-zones/');
 export const getOrders = () => api.get('/orders/');
 export const getOrder = (id) => api.get(`/orders/${id}/`);  // ✅ Fixed syntax
 export const createOrder = (data) => api.post('/orders/create/', data);
-export const getUserOrders = () => api.get('/orders/user/');  // ✅ ADDED THIS
+export const getUserOrders = () => api.get('/orders/user/');  // 
 
 export default api;
