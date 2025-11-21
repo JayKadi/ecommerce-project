@@ -4,17 +4,37 @@ import { getProducts } from '../services/api';
 
 function ProductList() {
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedSizes, setSelectedSizes] = useState([]);
+  const [selectedConditions, setSelectedConditions] = useState([]);
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 10000 });
+  const [sortBy, setSortBy] = useState('newest');
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Get unique categories from products
+  const categories = ['all', ...new Set(products.map(p => p.category).filter(Boolean))];
+  const sizes = ['xs', 's', 'm', 'l', 'xl', 'xxl', 'one_size'];
+  const conditions = ['new', 'like_new', 'good', 'fair'];
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    filterAndSortProducts();
+  }, [products, searchQuery, selectedCategory, selectedSizes, selectedConditions, priceRange, sortBy]);
+
   const fetchProducts = async () => {
     try {
       const response = await getProducts();
       setProducts(response.data);
+      setFilteredProducts(response.data);
     } catch (err) {
       setError('Failed to fetch products');
       console.error(err);
@@ -22,6 +42,81 @@ function ProductList() {
       setLoading(false);
     }
   };
+
+  const filterAndSortProducts = () => {
+    let filtered = [...products];
+
+    // Search filter
+    if (searchQuery) {
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Category filter
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(product => product.category === selectedCategory);
+    }
+
+    // Size filter
+    if (selectedSizes.length > 0) {
+      filtered = filtered.filter(product => selectedSizes.includes(product.size));
+    }
+
+    // Condition filter
+    if (selectedConditions.length > 0) {
+      filtered = filtered.filter(product => selectedConditions.includes(product.condition));
+    }
+
+    // Price range filter
+    filtered = filtered.filter(product =>
+      product.price >= priceRange.min && product.price <= priceRange.max
+    );
+
+    // Sort
+    switch (sortBy) {
+      case 'price-low':
+        filtered.sort((a, b) => a.price - b.price);
+        break;
+      case 'price-high':
+        filtered.sort((a, b) => b.price - a.price);
+        break;
+      case 'name':
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'newest':
+      default:
+        filtered.sort((a, b) => b.id - a.id);
+        break;
+    }
+
+    setFilteredProducts(filtered);
+  };
+
+  const handleSizeToggle = (size) => {
+    setSelectedSizes(prev =>
+      prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]
+    );
+  };
+
+  const handleConditionToggle = (condition) => {
+    setSelectedConditions(prev =>
+      prev.includes(condition) ? prev.filter(c => c !== condition) : [...prev, condition]
+    );
+  };
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('all');
+    setSelectedSizes([]);
+    setSelectedConditions([]);
+    setPriceRange({ min: 0, max: 10000 });
+    setSortBy('newest');
+  };
+
+  const hasActiveFilters = searchQuery || selectedCategory !== 'all' || selectedSizes.length > 0 || 
+                          selectedConditions.length > 0 || priceRange.min > 0 || priceRange.max < 10000;
 
   const getConditionColor = (condition) => {
     const colors = {
@@ -41,6 +136,14 @@ function ProductList() {
       fair: 'Fair',
     };
     return labels[condition] || condition;
+  };
+
+  const getSizeLabel = (size) => {
+    const labels = {
+      xs: 'XS', s: 'S', m: 'M', l: 'L', xl: 'XL', xxl: 'XXL',
+      one_size: 'One Size', various: 'Various'
+    };
+    return labels[size] || size?.toUpperCase();
   };
 
   if (loading) {
@@ -69,7 +172,6 @@ function ProductList() {
     <div className="min-h-screen" style={{ backgroundColor: '#F5F5DC' }}>
       {/* Hero Section with Leopard Print Overlay */}
       <div className="relative overflow-hidden">
-        {/* Leopard Print Background */}
         <div 
           className="absolute inset-0 opacity-20"
           style={{
@@ -84,7 +186,6 @@ function ProductList() {
         
         <div className="relative" style={{ background: 'linear-gradient(135deg, #E85D45 0%, #FFB6C1 50%, #C19A6B 100%)' }}>
           <div className="max-w-7xl mx-auto px-4 py-20 text-center">
-            {/* Logo Text */}
             <div className="mb-6">
               <h1 
                 className="text-6xl md:text-7xl font-bold mb-2"
@@ -117,7 +218,6 @@ function ProductList() {
               Discover unique, pre-loved pieces with fierce style
             </p>
             
-            {/* Stats Bar */}
             <div className="mt-10 grid grid-cols-3 gap-4 max-w-3xl mx-auto">
               <div className="bg-black/20 backdrop-blur-md rounded-xl p-4 border-2" style={{ borderColor: '#FFB6C1' }}>
                 <div className="text-3xl font-bold text-white">{products.length}</div>
@@ -136,36 +236,225 @@ function ProductList() {
         </div>
       </div>
 
+      {/* Search & Filter Bar */}
+      <div className="bg-white border-b-4 sticky top-20 z-40 shadow-lg" style={{ borderColor: '#E85D45' }}>
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Search Bar */}
+            <div className="flex-1">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search for items..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 border-2 rounded-xl focus:outline-none transition-colors"
+                  style={{ borderColor: '#C19A6B' }}
+                />
+                <svg 
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Sort Dropdown */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-4 py-3 border-2 rounded-xl focus:outline-none bg-white font-semibold"
+              style={{ borderColor: '#C19A6B', color: '#E85D45' }}
+            >
+              <option value="newest">Newest First</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+              <option value="name">Name: A to Z</option>
+            </select>
+
+            {/* Filter Toggle Button */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="px-6 py-3 rounded-xl font-bold transition-all border-2 border-black flex items-center justify-center gap-2"
+              style={{ 
+                background: hasActiveFilters 
+                  ? 'linear-gradient(135deg, #E85D45 0%, #FFB6C1 100%)'
+                  : 'white',
+                color: hasActiveFilters ? 'white' : '#000'
+              }}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              Filters {hasActiveFilters && `(${
+                (selectedCategory !== 'all' ? 1 : 0) +
+                selectedSizes.length +
+                selectedConditions.length +
+                (searchQuery ? 1 : 0)
+              })`}
+            </button>
+          </div>
+
+          {/* Expandable Filters */}
+          {showFilters && (
+            <div className="mt-4 p-6 rounded-xl border-2" style={{ backgroundColor: '#F5F5DC', borderColor: '#C19A6B' }}>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {/* Category Filter */}
+                <div>
+                  <label className="block text-sm font-bold mb-2" style={{ color: '#E85D45' }}>Category</label>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full px-4 py-2 border-2 rounded-lg focus:outline-none"
+                    style={{ borderColor: '#C19A6B' }}
+                  >
+                    <option value="all">All Categories</option>
+                    {categories.slice(1).map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Size Filter */}
+                <div>
+                  <label className="block text-sm font-bold mb-2" style={{ color: '#E85D45' }}>Size</label>
+                  <div className="flex flex-wrap gap-2">
+                    {sizes.map(size => (
+                      <button
+                        key={size}
+                        onClick={() => handleSizeToggle(size)}
+                        className={`px-3 py-1 rounded-lg text-sm font-semibold border-2 transition-all`}
+                        style={{
+                          backgroundColor: selectedSizes.includes(size) ? '#E85D45' : 'white',
+                          color: selectedSizes.includes(size) ? 'white' : '#000',
+                          borderColor: selectedSizes.includes(size) ? '#000' : '#C19A6B'
+                        }}
+                      >
+                        {getSizeLabel(size)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Condition Filter */}
+                <div>
+                  <label className="block text-sm font-bold mb-2" style={{ color: '#E85D45' }}>Condition</label>
+                  <div className="space-y-2">
+                    {conditions.map(condition => (
+                      <label key={condition} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedConditions.includes(condition)}
+                          onChange={() => handleConditionToggle(condition)}
+                          className="w-4 h-4 rounded"
+                        />
+                        <span className="text-sm font-medium">
+                          {getConditionLabel(condition)}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Price Range */}
+                <div>
+                  <label className="block text-sm font-bold mb-2" style={{ color: '#E85D45' }}>
+                    Price (KES {priceRange.min} - {priceRange.max})
+                  </label>
+                  <div className="space-y-3">
+                    <input
+                      type="range"
+                      min="0"
+                      max="10000"
+                      step="100"
+                      value={priceRange.max}
+                      onChange={(e) => setPriceRange({ ...priceRange, max: parseInt(e.target.value) })}
+                      className="w-full"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setPriceRange({ min: 0, max: 500 })}
+                        className="flex-1 px-2 py-1 text-xs rounded bg-white border-2"
+                        style={{ borderColor: '#C19A6B' }}
+                      >
+                        Under 500
+                      </button>
+                      <button
+                        onClick={() => setPriceRange({ min: 500, max: 1500 })}
+                        className="flex-1 px-2 py-1 text-xs rounded bg-white border-2"
+                        style={{ borderColor: '#C19A6B' }}
+                      >
+                        500-1500
+                      </button>
+                      <button
+                        onClick={() => setPriceRange({ min: 1500, max: 10000 })}
+                        className="flex-1 px-2 py-1 text-xs rounded bg-white border-2"
+                        style={{ borderColor: '#C19A6B' }}
+                      >
+                        1500+
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={clearFilters}
+                    className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold"
+                  >
+                    Clear All Filters
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Products Section */}
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h2 className="text-4xl font-bold" style={{ color: '#E85D45' }}>
-              Shop The Collection
+              {hasActiveFilters ? 'Filtered Results' : 'Shop The Collection'}
             </h2>
             <div className="h-1 w-24 mt-2 rounded" style={{ backgroundColor: '#FFB6C1' }}></div>
           </div>
           <div className="text-sm px-4 py-2 rounded-full" style={{ backgroundColor: '#FFB6C1', color: '#000' }}>
-            {products.length} {products.length === 1 ? 'item' : 'items'}
+            {filteredProducts.length} {filteredProducts.length === 1 ? 'item' : 'items'}
           </div>
         </div>
 
-        {products.length === 0 ? (
+        {filteredProducts.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl shadow-lg">
-            <div className="text-6xl mb-4">🛍️</div>
-            <p className="text-xl text-gray-700 font-medium mb-2">No products available yet</p>
-            <p className="text-gray-500">Check back soon for amazing finds!</p>
+            <div className="text-6xl mb-4">🔍</div>
+            <p className="text-xl text-gray-700 font-medium mb-2">No items found</p>
+            <p className="text-gray-500 mb-6">Try adjusting your filters or search query</p>
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="px-6 py-3 text-white rounded-xl font-semibold shadow-lg hover:scale-105 transition-transform border-2 border-black"
+                style={{ background: 'linear-gradient(135deg, #E85D45 0%, #FFB6C1 100%)' }}
+              >
+                Clear Filters
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <Link
                 key={product.id}
                 to={`/product/${product.id}`}
                 className="group"
               >
                 <div className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden transform hover:-translate-y-2 border-2 border-transparent hover:border-pink-300">
-                  {/* Image Container */}
                   <div className="relative overflow-hidden aspect-square bg-gray-100">
                     <img
                       src={product.image?.replace('http://localhost:8000', 'http://127.0.0.1:8000')}
@@ -176,7 +465,6 @@ function ProductList() {
                       }}
                     />
                     
-                    {/* Leopard Print Border Overlay on Hover */}
                     <div className="absolute inset-0 border-8 border-transparent group-hover:border-opacity-50 transition-all duration-300 pointer-events-none" 
                          style={{ 
                            borderImage: 'repeating-linear-gradient(45deg, #C19A6B, #C19A6B 10px, #000 10px, #000 20px) 8',
@@ -184,7 +472,6 @@ function ProductList() {
                          }}
                     />
                     
-                    {/* Badges */}
                     <div className="absolute top-3 left-3 flex flex-col gap-2">
                       {product.condition && (
                         <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-lg border-2 ${getConditionColor(product.condition)}`}>
@@ -205,7 +492,6 @@ function ProductList() {
                       )}
                     </div>
 
-                    {/* Quick View Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center pb-6">
                       <span className="text-white font-bold text-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300"
                             style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
@@ -214,20 +500,16 @@ function ProductList() {
                     </div>
                   </div>
 
-                  {/* Product Info */}
                   <div className="p-5">
-                    {/* Category */}
                     <div className="text-xs font-bold uppercase tracking-wider mb-2" 
                          style={{ color: '#E85D45' }}>
                       {product.category}
                     </div>
 
-                    {/* Name */}
                     <h3 className="font-bold text-gray-800 mb-3 line-clamp-2 text-lg group-hover:text-pink-600 transition-colors">
                       {product.name}
                     </h3>
 
-                    {/* Price & Stock */}
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <span className="text-2xl font-bold" style={{ color: '#E85D45' }}>
@@ -248,7 +530,6 @@ function ProductList() {
                       )}
                     </div>
 
-                    {/* Size if available */}
                     {product.size && (
                       <div className="text-xs text-gray-600 font-medium">
                         Size: <span className="font-bold" style={{ color: '#E85D45' }}>
@@ -258,7 +539,6 @@ function ProductList() {
                     )}
                   </div>
 
-                  {/* Hover CTA Button */}
                   <div className="px-5 pb-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <button 
                       className="w-full py-3 text-white rounded-xl font-bold shadow-lg transform hover:scale-105 transition-all border-2 border-black"
@@ -276,7 +556,7 @@ function ProductList() {
         )}
       </div>
 
-      {/* Trust Section with Leopard Accents */}
+      {/* Trust Section */}
       <div className="bg-white border-t-4 py-16" style={{ borderColor: '#E85D45' }}>
         <div className="max-w-7xl mx-auto px-4">
           <h3 className="text-3xl font-bold text-center mb-12" style={{ color: '#E85D45' }}>
@@ -315,7 +595,7 @@ function ProductList() {
         <p className="text-gray-600">Follow us on Instagram & TikTok for daily drops!</p>
       </div>
 
-      {/* Floating WhatsApp Button - Leopard Theme */}
+      {/* Floating WhatsApp Button */}
       <a
         href="https://wa.me/254705807643?text=Hi%20Kadi%20Thrift!%20I%27m%20interested%20in%20your%20products"
         target="_blank"
@@ -323,13 +603,11 @@ function ProductList() {
         className="fixed bottom-6 right-6 z-50 group"
       >
         <div className="relative">
-          {/* Pulsing Ring Animation - Pink */}
           <div 
             className="absolute inset-0 rounded-full animate-ping opacity-75"
             style={{ backgroundColor: '#FFB6C1' }}
           ></div>
           
-          {/* Button with Gradient */}
           <div 
             className="relative w-16 h-16 rounded-full shadow-2xl flex items-center justify-center transform group-hover:scale-110 transition-all duration-300 border-4 border-white"
             style={{ 
@@ -345,7 +623,6 @@ function ProductList() {
             </svg>
           </div>
 
-          {/* Tooltip on Hover */}
           <div className="absolute right-20 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
             <div 
               className="text-white text-sm font-bold px-4 py-2 rounded-lg shadow-xl whitespace-nowrap border-2"
