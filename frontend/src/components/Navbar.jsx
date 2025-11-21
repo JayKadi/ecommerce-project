@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -6,50 +6,67 @@ function Navbar() {
   const { getCartCount } = useCart();
   const { user, logout, isAuthenticated } = useAuth();
   const cartCount = getCartCount();
+  const location = useLocation();
+  
+  // Check if on dashboard
+  const isDashboard = location.pathname === '/dashboard';
 
   return (
     <nav className="bg-white shadow-lg sticky top-0 z-50 border-b-4" style={{ borderColor: '#E85D45' }}>
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-20">
-          {/* Logo/Brand with Frame */}
-<Link to="/" className="flex items-center group">
-  <div className="relative">
-    {/* Leopard Print Border Effect */}
-    <div 
-      className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-      style={{
-        border: '3px solid transparent',
-        borderImage: 'repeating-linear-gradient(45deg, #C19A6B, #C19A6B 5px, #000 5px, #000 7px) 3'
-      }}
-    />
-    
-    <img 
-      src="/logo.jpeg"
-      alt="Kadi Thrift" 
-      className="h-16 md:h-20 w-auto relative z-10 transform group-hover:scale-105 transition-transform duration-300"
-    />
-  </div>
+          {/* Logo */}
+          <Link to="/" className="flex items-center group">
+            <div className="relative">
+              <div 
+                className="absolute -inset-1 rounded-full transition-all duration-300"
+                style={{ 
+                  background: 'linear-gradient(135deg, #E85D45 0%, #FFB6C1 50%, #C19A6B 100%)'
+                }}
+              />
+              <div className="absolute -inset-0.5 bg-white rounded-full" />
+              <img 
+                src="/logo.jpeg"
+                alt="Kadi Thrift" 
+                className="relative h-14 w-14 md:h-16 md:w-16 rounded-full object-cover transform group-hover:scale-105 group-hover:rotate-3 transition-all duration-300 shadow-lg"
+              />
+            </div>
           </Link>
 
           {/* Navigation Links */}
           <div className="flex items-center gap-6">
-            {/* Products Link */}
-            <Link 
-              to="/" 
-              className="text-gray-700 hover:text-pink-600 font-semibold transition-colors relative group"
-            >
-              Products
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 group-hover:w-full transition-all duration-300" 
-                    style={{ backgroundColor: '#FFB6C1' }}></span>
-            </Link>
+            {/* Show these links only when NOT on dashboard */}
+            {!isDashboard && (
+              <>
+                <Link 
+                  to="/" 
+                  className="text-gray-700 hover:text-pink-600 font-semibold transition-colors relative group"
+                >
+                  Products
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 group-hover:w-full transition-all duration-300" 
+                        style={{ backgroundColor: '#FFB6C1' }}></span>
+                </Link>
 
-            {/* Orders Link */}
-            {isAuthenticated && (
+                {isAuthenticated && (
+                  <Link 
+                    to="/orders" 
+                    className="text-gray-700 hover:text-pink-600 font-semibold transition-colors relative group"
+                  >
+                    Orders
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 group-hover:w-full transition-all duration-300" 
+                          style={{ backgroundColor: '#FFB6C1' }}></span>
+                  </Link>
+                )}
+              </>
+            )}
+
+            {/* Dashboard Link - Show only when logged in and NOT on dashboard */}
+            {isAuthenticated && !isDashboard && (
               <Link 
-                to="/orders" 
+                to="/dashboard" 
                 className="text-gray-700 hover:text-pink-600 font-semibold transition-colors relative group"
               >
-                Orders
+                Dashboard
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 group-hover:w-full transition-all duration-300" 
                       style={{ backgroundColor: '#FFB6C1' }}></span>
               </Link>
@@ -71,7 +88,7 @@ function Navbar() {
               </Link>
             )}
             
-            {/* Cart Link */}
+            {/* Cart Link - Always visible */}
             <Link 
               to="/cart" 
               className="relative flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all transform hover:scale-105 border-2"
@@ -152,8 +169,6 @@ function Navbar() {
           </div>
         </div>
       </div>
-
-      
     </nav>
   );
 }
