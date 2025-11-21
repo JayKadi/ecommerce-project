@@ -44,5 +44,8 @@ export const getOrders = () => api.get('/orders/');
 export const getOrder = (id) => api.get(`/orders/${id}/`);  // ✅ Fixed syntax
 export const createOrder = (data) => api.post('/orders/create/', data);
 export const getUserOrders = () => api.get('/orders/user/');  // 
+// Admin orders
+export const getAdminOrders = () => api.get('/admin/orders/');
+export const updateOrderStatus = (id, data) => api.put(`/admin/orders/${id}/status/`, data);
 
 export default api;
