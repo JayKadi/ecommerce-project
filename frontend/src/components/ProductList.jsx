@@ -237,7 +237,7 @@ function ProductList() {
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="bg-white border-b-4 sticky top-20 z-40 shadow-lg" style={{ borderColor: '#E85D45' }}>
+      <div className="bg-white border-b-4 sticky top-20 z-10 shadow-lg" style={{ borderColor: '#E85D45' }}>
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row gap-4">
             {/* Search Bar */}
