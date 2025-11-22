@@ -16,7 +16,11 @@ from .serializers import (
     ProductSerializer, RegisterSerializer, UserSerializer,
     OrderSerializer, OrderCreateSerializer
 )
-
+from .emails import (
+    send_welcome_email,
+    send_order_confirmation_email,
+    send_order_status_email
+)
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.filter(is_active=True)
@@ -51,6 +55,14 @@ def register(request):
     if serializer.is_valid():
         user = serializer.save()
         token, created = Token.objects.get_or_create(user=user)
+        
+        # ✅ SEND WELCOME EMAIL
+        try:
+            send_welcome_email(user)
+            print(f"✅ Welcome email sent to {user.email}")
+        except Exception as e:
+            print(f"❌ Email error: {e}")
+        
         return Response({
             'token': token.key,
             'user': UserSerializer(user).data
@@ -347,7 +359,6 @@ def admin_all_orders(request):
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def admin_update_order_status(request, pk):
-    """Update order status"""
     if not (request.user.is_staff or request.user.is_superuser):
         return Response({'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
     
@@ -363,7 +374,15 @@ def admin_update_order_status(request, pk):
         order.status = new_status
         order.save()
         
-        # ✅ Restore stock if order is cancelled AND was previously completed
+        # ✅ SEND STATUS UPDATE EMAIL
+        if new_status != old_status:
+            try:
+                send_order_status_email(order, old_status)
+                print(f"✅ Status email sent for Order #{order.id}: {old_status} → {new_status}")
+            except Exception as e:
+                print(f"❌ Email error: {e}")
+        
+        # Restore stock if cancelled
         if new_status == 'cancelled' and old_status != 'cancelled' and order.payment_status == 'completed':
             for item in order.items.all():
                 product = item.product
@@ -443,12 +462,18 @@ def create_order(request):
                 quantity=item['quantity'],
                 price=item['price']
             )
-            
-           
+        
         # Create unique merchant reference
         merchant_ref = f"KT-{order.id}-{int(order.created_at.timestamp())}"
         order.pesapal_merchant_reference = merchant_ref
         order.save()
+        
+        # ✅ SEND ORDER CONFIRMATION EMAIL (FIXED INDENTATION)
+        try:
+            send_order_confirmation_email(order)
+            print(f"✅ Order confirmation sent for Order #{order.id}")
+        except Exception as e:
+            print(f"❌ Email error: {e}")
         
         # Initiate Pesapal payment
         try:
@@ -528,6 +553,20 @@ def get_order(request, pk):
         return Response(serializer.data)
     except Order.DoesNotExist:
         return Response({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_orders(request):
+    """Get all orders for the authenticated user"""
+    try:
+        orders = Order.objects.filter(user=request.user).order_by('-created_at')
+        serializer = OrderSerializer(orders, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        print(f"Error fetching user orders: {str(e)}")
+        return Response(
+            {'error': 'Failed to fetch orders'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def pesapal_callback(request):

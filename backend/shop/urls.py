@@ -4,7 +4,7 @@ from .views import (
     ProductViewSet, OrderViewSet, register, login, logout, get_user,
     google_login,
     # Order views
-    get_delivery_zones, create_order, get_order,
+    get_delivery_zones, create_order, user_orders,
     # Pesapal views
     pesapal_callback, verify_payment,
     # Admin views
@@ -31,7 +31,7 @@ urlpatterns = [
     # Order management (BEFORE router) - IMPORTANT!
     path('orders/create/', create_order, name='create_order'),
     path('orders/<int:order_id>/verify-payment/', verify_payment, name='verify_payment'),
-    
+    path('orders/user/', user_orders, name='user-orders'),
     # Pesapal payment endpoints (BEFORE router)
     path('pesapal/callback/', pesapal_callback, name='pesapal_callback'),
     

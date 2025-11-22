@@ -192,3 +192,5 @@ PESAPAL_CONSUMER_KEY = config('PESAPAL_CONSUMER_KEY')
 PESAPAL_CONSUMER_SECRET = config('PESAPAL_CONSUMER_SECRET')
 PESAPAL_ENVIRONMENT = config('PESAPAL_ENVIRONMENT', default='live')
 PESAPAL_IPN_ID = config('PESAPAL_IPN_ID', default='') 
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'Kadi Thrift 🐆 <kadithrift@gmail.com>'
