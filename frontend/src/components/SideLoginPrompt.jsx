@@ -86,24 +86,26 @@ function SideLoginPrompt() {
           </button>
         </div>
 
-        {/* Icon */}
-        <div className="text-center mb-3">
-          <div 
-            className="inline-block rounded-full p-2 mb-2 border-2"
-            style={{ 
-              background: 'linear-gradient(135deg, #E85D45 0%, #FFB6C1 100%)',
-              borderColor: '#000'
-            }}
-          >
-            <span className="text-2xl">🐆</span>
-          </div>
-          <h3 className="text-lg font-bold mb-1" style={{ color: '#E85D45' }}>
-            Join Kadi Thrift!
-          </h3>
-          <p className="text-xs text-gray-700">
-            Login for exclusive deals
-          </p>
-        </div>
+        {/* Logo/Brand */}
+<div className="text-center mb-3">
+  {/* YOUR LOGO IMAGE */}
+  <div className="mb-2">
+    <img 
+      src="/logo.jpeg" 
+      alt="Kadi Thrift Logo" 
+      className="w-16 h-16 mx-auto rounded-full object-cover border-2 shadow-md"
+      style={{ borderColor: '#E85D45' }}
+    />
+  </div>
+  
+  <h3 className="text-base font-bold mb-1" style={{ color: '#E85D45' }}>
+    Join Us! 🐆
+  </h3>
+  <p className="text-xs text-gray-700">
+    Login for exclusive deals
+  </p>
+</div>
+
 
         {/* Google Login Button */}
         <div className="mb-3">
