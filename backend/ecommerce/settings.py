@@ -20,10 +20,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')  
+SECRET_KEY = os.getenv('SECRET_KEY', 'fallback-key')  
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = []
 
@@ -181,15 +181,15 @@ SOCIALACCOUNT_PROVIDERS = {
             'access_type': 'online',
         },
         'APP': {
-            'client_id': config('GOOGLE_CLIENT_ID'),
+            'client_id': os.getenv('GOOGLE_CLIENT_ID', ''),
             'secret': config('GOOGLE_CLIENT_SECRET'),
             'key': ''
         }
     }
 }
 # Pesapal Configuration
-PESAPAL_CONSUMER_KEY = config('PESAPAL_CONSUMER_KEY')
-PESAPAL_CONSUMER_SECRET = config('PESAPAL_CONSUMER_SECRET')
+PESAPAL_CONSUMER_KEY = os.getenv('PESAPAL_CONSUMER_KEY', '')
+PESAPAL_CONSUMER_SECRET = os.getenv('PESAPAL_CONSUMER_SECRET', '')
 PESAPAL_ENVIRONMENT = config('PESAPAL_ENVIRONMENT', default='live')
 PESAPAL_IPN_ID = config('PESAPAL_IPN_ID', default='') 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
