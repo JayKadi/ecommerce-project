@@ -15,7 +15,7 @@ class ProductVideoSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     additional_images = ProductImageSerializer(many=True, read_only=True)
-    video = ProductVideoSerializer(read_only=True)
+    video = ProductVideoSerializer(read_only=True, allow_null=True) 
     
     class Meta:
         model = Product
