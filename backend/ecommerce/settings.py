@@ -24,8 +24,8 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '.railway.app',
-    '.vercel.app',
+    "ecommerce-project-production-f8f8.up.railway.app",
+    "ecommerce-project-ochre-five.vercel.app",
 ]
 
 # Application definition
@@ -145,6 +145,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:5173',
     'http://127.0.0.1:8000',
     FRONTEND_URL,
+    "https://ecommerce-project-ochre-five.vercel.app",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
