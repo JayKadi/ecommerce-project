@@ -131,14 +131,19 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # CORS settings
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
+# Build CORS allowed origins - only add FRONTEND_URL if it has a valid scheme
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://localhost:5173',
     'http://127.0.0.1:5173',
     'http://127.0.0.1:8000',
-    FRONTEND_URL,
     "https://ecommerce-project-ochre-five.vercel.app",
 ]
+
+# Add FRONTEND_URL only if it has a proper scheme
+if FRONTEND_URL and (FRONTEND_URL.startswith('http://') or FRONTEND_URL.startswith('https://')):
+    if FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -148,6 +153,10 @@ CSRF_TRUSTED_ORIGINS = [
     "https://ecommerce-project-ochre-five.vercel.app",
 ]
 
+# Add FRONTEND_URL to CSRF if valid
+if FRONTEND_URL and FRONTEND_URL.startswith('https://'):
+    if FRONTEND_URL not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(FRONTEND_URL)
 # Site ID for django.contrib.sites
 SITE_ID = 1
 
