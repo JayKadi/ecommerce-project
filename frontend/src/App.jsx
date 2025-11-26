@@ -16,6 +16,7 @@ import PaymentCallback from './components/PaymentCallback';
 import UserDashboard from './components/UserDashboard';
 import OrderDetail from './components/OrderDetail';
 import SizeGuide from './components/SizeGuide';
+import AuthCallback from './pages/AuthCallback';
 
 
 // Admin components
@@ -45,6 +46,7 @@ function App() {
           <Route path="/dashboard" element={<UserDashboard />} />
           <Route path="/orders/:orderId" element={<OrderDetail />} />
           <Route path="/size-guide" element={<SizeGuide />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           {/* Admin Routes - Protected */}
           <Route
             path="/admin"
