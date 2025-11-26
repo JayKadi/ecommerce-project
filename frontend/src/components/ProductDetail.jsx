@@ -29,46 +29,53 @@ function ProductDetail() {
     
     setProduct(productData);
     
-      // Collect all images (main + additional)
-      const images = [];
-      if (productData.image) {
+    // Get API base URL from environment
+    const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+    
+    // Helper function to get full URL
+    const getFullUrl = (url) => {
+      if (!url) return null;
+      return url.startsWith('http') ? url : `${API_BASE}${url}`;
+    };
+    
+    // Collect all images (main + additional)
+    const images = [];
+    
+    if (productData.image) {
+      images.push({
+        type: 'image',
+        url: getFullUrl(productData.image)
+      });
+    }
+    
+    if (productData.additional_images && productData.additional_images.length > 0) {
+      productData.additional_images.forEach(img => {
         images.push({
           type: 'image',
-          url: productData.image.replace('http://localhost:8000', 'http://127.0.0.1:8000')
+          url: getFullUrl(img.image)
         });
-      }
-      
-      if (productData.additional_images && productData.additional_images.length > 0) {
-        productData.additional_images.forEach(img => {
-          images.push({
-            type: 'image',
-            url: img.image.replace('http://localhost:8000', 'http://127.0.0.1:8000')
-          });
-        });
-      }
-      
-      // Add video if exists
-      if (productData.video) {
-        images.push({
-          type: 'video',
-          url: productData.video.video.replace('http://localhost:8000', 'http://127.0.0.1:8000'),
-          thumbnail: productData.video.thumbnail 
-            ? productData.video.thumbnail.replace('http://localhost:8000', 'http://127.0.0.1:8000') 
-            : null
-        });
-      }
-      
-      setAllImages(images);
-      setSelectedImageIndex(0);
-      setError(null);
-    } catch (err) {
-      setError('Failed to fetch product');
-      console.error(err);
-    } finally {
-      setLoading(false);
+      });
     }
-  };
-
+    
+    // Add video if exists
+    if (productData.video) {
+      images.push({
+        type: 'video',
+        url: getFullUrl(productData.video.video),
+        thumbnail: getFullUrl(productData.video.thumbnail)
+      });
+    }
+    
+    setAllImages(images);
+    setSelectedImageIndex(0);
+    setError(null);
+  } catch (err) {
+    setError('Failed to fetch product');
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
   const handlePrevImage = () => {
     setSelectedImageIndex((prev) => (prev === 0 ? allImages.length - 1 : prev - 1));
   };
