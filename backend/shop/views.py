@@ -10,6 +10,8 @@ from google.auth.transport import requests as google_requests
 from decouple import config
 from .pesapal import pesapal_client
 from django.conf import settings
+from allauth.socialaccount.models import SocialToken
+from django.shortcuts import redirect
 
 from .models import Product, Order, OrderItem, ProductImage, ProductVideo, DeliveryZone
 from .serializers import (
@@ -21,7 +23,24 @@ from .emails import (
     send_order_confirmation_email,
     send_order_status_email
 )
-
+def google_callback_redirect(request):
+    """
+    After Google OAuth, redirect to frontend with token
+    """
+    if request.user.is_authenticated:
+        # Get or create token
+        token, created = Token.objects.get_or_create(user=request.user)
+        
+        # Get frontend URL from environment
+        frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+        
+        # Redirect to frontend with token
+        return redirect(f'{frontend_url}/auth/callback?token={token.key}')
+    else:
+        # Login failed, redirect to login page
+        frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+        return redirect(f'{frontend_url}/login')
+    
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.filter(is_active=True)
     serializer_class = ProductSerializer

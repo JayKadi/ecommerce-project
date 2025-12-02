@@ -178,6 +178,8 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = 'optional'
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 SOCIALACCOUNT_AUTO_SIGNUP = True
+# ADD THIS: Custom adapter to handle OAuth callbacks
+SOCIALACCOUNT_ADAPTER = 'shop.adapters.CustomSocialAccountAdapter'
 
 # Social account providers - ALL using os.getenv now!
 SOCIALACCOUNT_PROVIDERS = {

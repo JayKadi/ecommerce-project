@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     ProductViewSet, OrderViewSet, register, login, logout, get_user,
-    google_login,
+    google_login, google_callback_redirect,
     # Order views
     get_delivery_zones, create_order, user_orders,
     # Pesapal views
@@ -24,6 +24,7 @@ urlpatterns = [
     path('auth/logout/', logout, name='logout'),
     path('auth/user/', get_user, name='get_user'),
     path('auth/google/', google_login, name='google_login'),
+    path('auth/google/callback/', google_callback_redirect, name='google_callback'),  
     
     # Delivery zones (BEFORE router)
     path('delivery-zones/', get_delivery_zones, name='delivery_zones'),
