@@ -14,9 +14,6 @@ function SideLoginPrompt() {
   try {
     const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
     
-    console.log('SideLoginPrompt - Using API_BASE:', API_BASE);
-    console.log('Credential Response:', credentialResponse);
-    
     const response = await axios.post(`${API_BASE}/api/auth/google/`, {
       access_token: credentialResponse.credential,
     });
@@ -28,15 +25,9 @@ function SideLoginPrompt() {
     window.location.reload();
   } catch (error) {
     console.error('Google login failed:', error);
-    console.error('Error response:', error.response?.data); // See backend error details
-    console.error('Error status:', error.response?.status);
     alert('Google login failed. Please try again.');
   }
 };
-  const handleGoogleError = () => {
-    console.error('Google login failed');
-    alert('Google login failed. Please try again.');
-  };
 
   // Don't show if authenticated or dismissed
   if (isAuthenticated || isDismissed) {
@@ -94,23 +85,25 @@ function SideLoginPrompt() {
         </div>
 
         {/* Logo/Brand */}
-        <div className="text-center mb-3">
-          <div className="mb-2">
-            <img 
-              src="/logo.jpeg" 
-              alt="Kadi Thrift Logo" 
-              className="w-16 h-16 mx-auto rounded-full object-cover border-2 shadow-md"
-              style={{ borderColor: '#E85D45' }}
-            />
-          </div>
-          
-          <h3 className="text-base font-bold mb-1" style={{ color: '#E85D45' }}>
-            Join Us! 🐆
-          </h3>
-          <p className="text-xs text-gray-700">
-            Login for exclusive deals
-          </p>
-        </div>
+<div className="text-center mb-3">
+  {/* YOUR LOGO IMAGE */}
+  <div className="mb-2">
+    <img 
+      src="/logo.jpeg" 
+      alt="Kadi Thrift Logo" 
+      className="w-16 h-16 mx-auto rounded-full object-cover border-2 shadow-md"
+      style={{ borderColor: '#E85D45' }}
+    />
+  </div>
+  
+  <h3 className="text-base font-bold mb-1" style={{ color: '#E85D45' }}>
+    Join Us! 🐆
+  </h3>
+  <p className="text-xs text-gray-700">
+    Login for exclusive deals
+  </p>
+</div>
+
 
         {/* Google Login Button */}
         <div className="mb-3">
