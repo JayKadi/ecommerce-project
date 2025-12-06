@@ -158,6 +158,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "https://ecommerce-project-ochre-five.vercel.app",
+    "https://ecommerce-project-production-f8f8.up.railway.app",
 ]
 
 # Add FRONTEND_URL to CSRF if valid

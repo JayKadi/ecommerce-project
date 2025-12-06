@@ -33,15 +33,15 @@ function Login() {
   };
 
   const handleGoogleLogin = () => {
-    // Get API base URL from environment
-    const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
-    
-    // Store the redirect path so we can return after login
-    sessionStorage.setItem('redirect_after_login', from);
-    
-    // Redirect to Django's Google OAuth endpoint
-    window.location.href = `${API_BASE}/accounts/google/login/`;
-  };
+  // Get API base URL from environment
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+  
+  // Store the redirect path so we can return after login
+  sessionStorage.setItem('redirect_after_login', from);
+  
+  // Redirect to Django's Google OAuth endpoint - CORRECTED PATH
+  window.location.href = `${API_BASE}/api/auth/google/`;
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
