@@ -33,6 +33,11 @@ function SideLoginPrompt() {
     alert('Google login failed. Please try again.');
   }
 };
+  const handleGoogleError = () => {
+    console.error('Google login failed');
+    alert('Google login failed. Please try again.');
+  };
+
   // Don't show if authenticated or dismissed
   if (isAuthenticated || isDismissed) {
     return null;
