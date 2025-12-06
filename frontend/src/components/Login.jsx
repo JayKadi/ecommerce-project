@@ -33,13 +33,16 @@ function Login() {
   };
 
   const handleGoogleLogin = () => {
-  // Get API base URL from environment
+  // Use the SAME logic as api.js
   const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
   
-  // Store the redirect path so we can return after login
+  // DEBUG - check what's being used
+  console.log('Google Login - VITE_API_URL:', import.meta.env.VITE_API_URL);
+  console.log('Google Login - API_BASE:', API_BASE);
+  
   sessionStorage.setItem('redirect_after_login', from);
   
-  // Redirect to Django's Google OAuth endpoint - CORRECTED PATH
+  // Use the Railway URL
   window.location.href = `${API_BASE}/api/auth/google/`;
 };
 
