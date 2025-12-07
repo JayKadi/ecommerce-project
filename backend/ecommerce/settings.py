@@ -36,9 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-     'cloudinary_storage',
     'django.contrib.staticfiles',
-    'cloudinary',
     'django.contrib.sites',
     'shop',
     'rest_framework',
@@ -142,27 +140,27 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # ========================================
 # CLOUDINARY CONFIGURATION
 # ========================================
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
+#import cloudinary
+#import cloudinary.uploader
+#import cloudinary.api
 
 # Only configure if credentials are available (runtime, not build time)
-CLOUDINARY_CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME', '')
-CLOUDINARY_API_KEY = os.getenv('CLOUDINARY_API_KEY', '')
-CLOUDINARY_API_SECRET = os.getenv('CLOUDINARY_API_SECRET', '')
+#CLOUDINARY_CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME', '')
+#CLOUDINARY_API_KEY = os.getenv('CLOUDINARY_API_KEY', '')
+#CLOUDINARY_API_SECRET = os.getenv('CLOUDINARY_API_SECRET', '')
 
-if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
-    cloudinary.config(
-        cloud_name=CLOUDINARY_CLOUD_NAME,
-        api_key=CLOUDINARY_API_KEY,
-        api_secret=CLOUDINARY_API_SECRET,
-        secure=True
-    )
+#if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
+    #cloudinary.config(
+        #cloud_name=CLOUDINARY_CLOUD_NAME,
+        #api_key=CLOUDINARY_API_KEY,
+        #api_secret=CLOUDINARY_API_SECRET,
+        #secure=True
+    #)
     # Use Cloudinary for media files
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-else:
+    #DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+#else:
     # Fallback to local storage if Cloudinary not configured
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    #DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 # CORS settings
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
