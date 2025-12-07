@@ -193,9 +193,9 @@ SITE_ID = 1
 
 # Authentication backends
 AUTHENTICATION_BACKENDS = [
-    'shop.auth_backend.DebugAuthBackend',  # Add this FIRST for debugging
+    #'shop.auth_backend.DebugAuthBackend',  # Add this FIRST for debugging
     'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
+    #'allauth.account.auth_backends.AuthenticationBackend',
 ]
 # Allauth settings
 ACCOUNT_EMAIL_REQUIRED = True
