@@ -90,9 +90,11 @@ TEMPLATES = [
 WSGI_APPLICATION = 'ecommerce.wsgi.application'
 
 # Use PostgreSQL if DATABASE_URL is set, otherwise use SQLite
-if os.getenv('DATABASE_URL'):
+database_url = os.getenv('DATABASE_URL') or os.getenv('DATABASE_PUBLIC_URL')
+
+if database_url:
     DATABASES = {
-        'default': dj_database_url.config(default=os.getenv('DATABASE_URL'))
+        'default': dj_database_url.config(default=database_url)
     }
 else:
     DATABASES = {
