@@ -160,6 +160,29 @@ CSRF_TRUSTED_ORIGINS = [
     "https://ecommerce-project-ochre-five.vercel.app",
     "https://ecommerce-project-production-f8f8.up.railway.app",
 ]
+# ========================================
+# SESSION AND COOKIE SETTINGS
+# ========================================
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
+
+# Cookie security settings for production
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    CSRF_COOKIE_SAMESITE = 'Lax'
+else:
+    # For local development
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    CSRF_COOKIE_SAMESITE = 'Lax'
+
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False
+SESSION_COOKIE_NAME = 'sessionid'
+CSRF_COOKIE_NAME = 'csrftoken'
 
 # Add FRONTEND_URL to CSRF if valid
 if FRONTEND_URL and FRONTEND_URL.startswith('https://'):
