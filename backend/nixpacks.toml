@@ -5,8 +5,7 @@ nixPkgs = ["python312"]
 cmds = ["pip install -r requirements.txt"]
 
 [phases.build]
-# Skip collectstatic during build - we'll do it at runtime
-cmds = ["echo 'Skipping collectstatic during build'"]
+cmds = ["python manage.py collectstatic --no-input"]
 
 [start]
-cmd = "python manage.py collectstatic --no-input && python manage.py migrate --no-input && gunicorn ecommerce.wsgi --bind 0.0.0.0:$PORT --log-file -"
+cmd = "python manage.py migrate --no-input && gunicorn ecommerce.wsgi --bind 0.0.0.0:$PORT --log-file -"
