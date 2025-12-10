@@ -40,9 +40,9 @@ INSTALLED_APPS = [
 ]
 
 # Only add Cloudinary apps if credentials are set (prevents build errors)
+# Only add Cloudinary if credentials are set (prevents build errors)
 if os.getenv('CLOUDINARY_CLOUD_NAME'):
-    INSTALLED_APPS.insert(5, 'cloudinary_storage')  # Before staticfiles
-    INSTALLED_APPS.append('cloudinary')  # After staticfiles
+    INSTALLED_APPS.append('cloudinary')  # Add cloudinary only, no cloudinary_storage
 
 INSTALLED_APPS += [
     'django.contrib.staticfiles',
