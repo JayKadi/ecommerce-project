@@ -11,7 +11,34 @@ from decouple import config
 from .pesapal import pesapal_client
 from django.conf import settings
 from allauth.socialaccount.models import SocialToken
-from django.shortcuts import redirect
+from django.shortcuts import redirect 
+from django.http import JsonResponse
+from django.conf import settings
+import cloudinary
+import cloudinary.uploader
+
+def test_cloudinary(request):
+    """Test endpoint to verify Cloudinary configuration"""
+    try:
+        # Check configuration
+        config_status = {
+            'cloud_name': settings.CLOUDINARY_CLOUD_NAME,
+            'storage_backend': settings.DEFAULT_FILE_STORAGE,
+            'cloudinary_in_apps': 'cloudinary' in settings.INSTALLED_APPS,
+        }
+        
+        # Try to get cloudinary config
+        try:
+            cloud_config = cloudinary.config()
+            config_status['cloudinary_configured'] = True
+            config_status['cloud_name_from_config'] = cloud_config.cloud_name
+        except Exception as e:
+            config_status['cloudinary_configured'] = False
+            config_status['error'] = str(e)
+        
+        return JsonResponse(config_status)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 from .models import Product, Order, OrderItem, ProductImage, ProductVideo, DeliveryZone
 from .serializers import (
