@@ -13,30 +13,30 @@ from django.conf import settings
 from allauth.socialaccount.models import SocialToken
 from django.shortcuts import redirect 
 from django.http import JsonResponse
-from django.conf import settings
-import cloudinary
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 import cloudinary.uploader
 
 def test_cloudinary(request):
-    """Test endpoint to verify Cloudinary configuration"""
+    """Test endpoint to verify Cloudinary upload"""
     try:
-        # Check configuration
-        config_status = {
-            'cloud_name': settings.CLOUDINARY_CLOUD_NAME,
-            'storage_backend': settings.DEFAULT_FILE_STORAGE,
-            'cloudinary_in_apps': 'cloudinary' in settings.INSTALLED_APPS,
-        }
+        # Test direct Cloudinary upload
+        result = cloudinary.uploader.upload(
+            "https://via.placeholder.com/150",
+            folder="test"
+        )
         
-        # Try to get cloudinary config
-        try:
-            cloud_config = cloudinary.config()
-            config_status['cloudinary_configured'] = True
-            config_status['cloud_name_from_config'] = cloud_config.cloud_name
-        except Exception as e:
-            config_status['cloudinary_configured'] = False
-            config_status['error'] = str(e)
+        # Test Django storage backend
+        test_file = ContentFile(b"test content")
+        file_name = default_storage.save('test/test.txt', test_file)
+        file_url = default_storage.url(file_name)
         
-        return JsonResponse(config_status)
+        return JsonResponse({
+            'direct_cloudinary_upload': result.get('secure_url'),
+            'django_storage_filename': file_name,
+            'django_storage_url': file_url,
+            'storage_backend': str(type(default_storage))
+        })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
