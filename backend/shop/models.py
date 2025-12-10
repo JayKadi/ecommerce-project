@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.text import slugify
 import uuid
+from cloudinary.models import CloudinaryField
 
 class Product(models.Model):
     CONDITION_CHOICES = [
@@ -35,7 +36,7 @@ class Product(models.Model):
     tiktok_link = models.URLField(blank=True, null=True)
     
     # Image
-    image = models.ImageField(upload_to='products/', blank=True, null=True)
+    image = CloudinaryField('image', folder='products', blank=True, null=True)
     
     # Status fields
     is_active = models.BooleanField(default=True)
@@ -59,7 +60,7 @@ class Product(models.Model):
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='additional_images')
-    image = models.ImageField(upload_to='products/additional/')
+    image = CloudinaryField('image', folder='products/additional')  # Changed
     order = models.PositiveIntegerField(default=0)
     
     class Meta:
@@ -70,8 +71,8 @@ class ProductImage(models.Model):
 
 class ProductVideo(models.Model):
     product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name='video')
-    video = models.FileField(upload_to='products/videos/')
-    thumbnail = models.ImageField(upload_to='products/video_thumbnails/', blank=True, null=True)
+    video = CloudinaryField('video', folder='products/videos', resource_type='video')  # Changed
+    thumbnail = CloudinaryField('image', folder='products/video_thumbnails', blank=True, null=True)  # Changed
     
     def __str__(self):
         return f"{self.product.name} - Video"

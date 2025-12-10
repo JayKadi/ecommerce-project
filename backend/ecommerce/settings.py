@@ -163,6 +163,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # ========================================
 # ========================================
 # ========================================
+# ========================================
 # CLOUDINARY CONFIGURATION
 # ========================================
 CLOUDINARY_CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME', '')
@@ -172,8 +173,6 @@ CLOUDINARY_API_SECRET = os.getenv('CLOUDINARY_API_SECRET', '')
 # Only configure Cloudinary if all credentials are present
 if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
     import cloudinary
-    import cloudinary.uploader
-    import cloudinary.api
     
     cloudinary.config(
         cloud_name=CLOUDINARY_CLOUD_NAME,
@@ -181,12 +180,6 @@ if CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET:
         api_secret=CLOUDINARY_API_SECRET,
         secure=True
     )
-    
-    # Use Cloudinary for media files
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-else:
-    # Fallback to local storage
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 # CORS settings
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
