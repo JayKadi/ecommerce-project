@@ -4,22 +4,50 @@ from django.contrib.auth.password_validation import validate_password
 from .models import Product, Order, OrderItem, ProductImage, ProductVideo
 
 class ProductImageSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()  # Add this
+    
     class Meta:
         model = ProductImage
         fields = ['id', 'image', 'order']
+    
+    def get_image(self, obj):
+        if obj.image:
+            # Get full Cloudinary URL
+            return f"https://res.cloudinary.com/dudqljqqc/{obj.image}"
+        return None
 
 class ProductVideoSerializer(serializers.ModelSerializer):
+    video = serializers.SerializerMethodField()  # Add this
+    thumbnail = serializers.SerializerMethodField()  # Add this
+    
     class Meta:
         model = ProductVideo
         fields = ['id', 'video', 'thumbnail']
+    
+    def get_video(self, obj):
+        if obj.video:
+            return f"https://res.cloudinary.com/dudqljqqc/{obj.video}"
+        return None
+    
+    def get_thumbnail(self, obj):
+        if obj.thumbnail:
+            return f"https://res.cloudinary.com/dudqljqqc/{obj.thumbnail}"
+        return None
 
 class ProductSerializer(serializers.ModelSerializer):
     additional_images = ProductImageSerializer(many=True, read_only=True)
-    video = ProductVideoSerializer(read_only=True, allow_null=True) 
+    video = ProductVideoSerializer(read_only=True, allow_null=True)
+    image = serializers.SerializerMethodField()  # Add this
     
     class Meta:
         model = Product
         fields = '__all__'
+    
+    def get_image(self, obj):
+        if obj.image:
+            # Get full Cloudinary URL
+            return f"https://res.cloudinary.com/dudqljqqc/{obj.image}"
+        return None
 
 
 class RegisterSerializer(serializers.ModelSerializer):
