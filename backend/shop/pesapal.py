@@ -104,11 +104,11 @@ class PesapalAPI:
                 print(f"Response: {response.text}")
             raise
     
-    def submit_order(self, order_id, amount, description, callback_url, 
+    def submit_order(self, order_id, amount, description, callback_url,
                      customer_email, customer_phone, customer_name):
         """
         Submit order to Pesapal
-        
+
         Args:
             order_id: Unique order reference
             amount: Amount to charge
@@ -118,17 +118,24 @@ class PesapalAPI:
             customer_phone: Customer phone number
             customer_name: Customer name
         """
-        if not self.access_token:
-            self.get_access_token()
-        
+        # Always get a fresh token to avoid expiration issues
+        self.get_access_token()
+
+        # Validate IPN ID is set
+        if not settings.PESAPAL_IPN_ID:
+            raise ValueError(
+                "PESAPAL_IPN_ID is not set. Please run 'python manage.py register_ipn' "
+                "and add the IPN ID to your environment variables."
+            )
+
         url = f'{self.base_url}/api/Transactions/SubmitOrderRequest'
-        
+
         headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {self.access_token}'
         }
-        
+
         # Format phone number (remove + and ensure 254 format)
         if customer_phone.startswith('+'):
             customer_phone = customer_phone[1:]
@@ -136,14 +143,14 @@ class PesapalAPI:
             customer_phone = '254' + customer_phone[1:]
         elif not customer_phone.startswith('254'):
             customer_phone = '254' + customer_phone
-        
+
         payload = {
             'id': str(order_id),
             'currency': 'KES',
             'amount': float(amount),
             'description': description,
             'callback_url': callback_url,
-            'notification_id': settings.PESAPAL_IPN_ID,  # Will use IPN ID once registered
+            'notification_id': settings.PESAPAL_IPN_ID,
             'billing_address': {
                 'email_address': customer_email,
                 'phone_number': customer_phone,
@@ -167,17 +174,29 @@ class PesapalAPI:
             print(f"\n📦 PAYLOAD BEING SENT:")
             print(json.dumps(payload, indent=2))
             print("=" * 60)
-            
+
             response = requests.post(url, json=payload, headers=headers)
-            
+
             print(f"\n📥 PESAPAL RESPONSE:")
             print(f"Status Code: {response.status_code}")
             print(f"Response Body: {response.text}")
             print("=" * 60 + "\n")
-            
+
+            data = response.json()
+
+            # Check if response contains an error
+            if data.get('error') is not None:
+                error_msg = data['error'].get('message', 'Unknown error')
+                error_code = data['error'].get('code', 'unknown')
+                print(f"\n❌ Pesapal Order Submission Error:")
+                print(f"   Code: {error_code}")
+                print(f"   Message: {error_msg}")
+
+                raise ValueError(f"Pesapal API Error: {error_msg} (Code: {error_code})")
+
             response.raise_for_status()
-            return response.json()
-        except Exception as e:
+            return data
+        except requests.exceptions.RequestException as e:
             print(f"\n❌ ERROR: {str(e)}")
             if 'response' in locals():
                 print(f"Response text: {response.text}")
