@@ -7,17 +7,33 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         try:
+            # Verify credentials are set
+            from django.conf import settings
+            if not settings.PESAPAL_CONSUMER_KEY or not settings.PESAPAL_CONSUMER_SECRET:
+                self.stdout.write(self.style.ERROR("❌ Pesapal credentials not configured!"))
+                self.stdout.write(f"PESAPAL_CONSUMER_KEY: {'Set' if settings.PESAPAL_CONSUMER_KEY else 'NOT SET'}")
+                self.stdout.write(f"PESAPAL_CONSUMER_SECRET: {'Set' if settings.PESAPAL_CONSUMER_SECRET else 'NOT SET'}")
+                return
+
+            self.stdout.write(f"Environment: {settings.PESAPAL_ENVIRONMENT}")
+            self.stdout.write(f"Getting access token...")
+
+            # Get fresh access token
+            token = pesapal_client.get_access_token()
+            if not token:
+                self.stdout.write(self.style.ERROR("❌ Failed to get access token"))
+                return
+
+            self.stdout.write(self.style.SUCCESS(f"✅ Access token obtained"))
+
             # Your Railway backend URL
             backend_url = os.getenv('RAILWAY_PUBLIC_DOMAIN', 'ecommerce-project-production-f8f8.up.railway.app')
             ipn_url = f"https://{backend_url}/api/pesapal/callback/"
-            
+
             self.stdout.write(f"Registering IPN URL: {ipn_url}")
-            
+
             # Register IPN with Pesapal
-            response = pesapal_client.register_ipn(
-                url=ipn_url,
-                ipn_notification_type='GET'  # or 'POST' depending on your preference
-            )
+            response = pesapal_client.register_ipn(ipn_url)
             
             self.stdout.write(self.style.SUCCESS(f"\n✅ IPN Registration Response:"))
             self.stdout.write(f"IPN ID: {response.get('ipn_id')}")

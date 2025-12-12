@@ -20,26 +20,58 @@ class PesapalAPI:
     def get_access_token(self):
         """Get OAuth access token from Pesapal"""
         url = f'{self.base_url}/api/Auth/RequestToken'
-        
+
         headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         }
-        
+
         payload = {
             'consumer_key': self.consumer_key,
             'consumer_secret': self.consumer_secret
         }
-        
+
+        print(f"\n🔑 Requesting access token from: {url}")
+        print(f"Consumer Key: {self.consumer_key[:10]}..." if self.consumer_key else "Consumer Key: NOT SET")
+        print(f"Environment: {self.environment}")
+
         try:
             response = requests.post(url, json=payload, headers=headers)
-            response.raise_for_status()
+            print(f"Status Code: {response.status_code}")
+            print(f"Response: {response.text}")
+
             data = response.json()
+
+            # Check if response contains an error (Pesapal returns 200 even for errors)
+            if 'error' in data:
+                error_msg = data['error'].get('message', 'Unknown error')
+                error_code = data['error'].get('code', 'unknown')
+                print(f"\n❌ Pesapal API Error:")
+                print(f"   Code: {error_code}")
+                print(f"   Message: {error_msg}")
+
+                if error_code == 'invalid_consumer_key_or_secret_provided':
+                    print(f"\n💡 This means:")
+                    print(f"   - Your consumer key or secret is incorrect")
+                    print(f"   - OR you're using {self.environment} credentials but your keys are for {'sandbox' if self.environment == 'live' else 'live'}")
+                    print(f"\n   Double-check your Pesapal credentials in Railway environment variables:")
+                    print(f"   - PESAPAL_CONSUMER_KEY")
+                    print(f"   - PESAPAL_CONSUMER_SECRET")
+                    print(f"   - PESAPAL_ENVIRONMENT (currently: {self.environment})")
+
+                return None
+
+            response.raise_for_status()
             self.access_token = data.get('token')
+
+            if not self.access_token:
+                print("⚠️  Warning: No token in response")
+                print(f"Response data: {data}")
+
             return self.access_token
-        except Exception as e:
-            print(f"Error getting access token: {str(e)}")
-            if hasattr(response, 'text'):
+        except requests.exceptions.RequestException as e:
+            print(f"❌ Error getting access token: {str(e)}")
+            if 'response' in locals():
                 print(f"Response: {response.text}")
             raise
     
