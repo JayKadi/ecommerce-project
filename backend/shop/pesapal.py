@@ -43,7 +43,8 @@ class PesapalAPI:
             data = response.json()
 
             # Check if response contains an error (Pesapal returns 200 even for errors)
-            if 'error' in data:
+            # Note: error can be null (None) for successful requests
+            if data.get('error') is not None:
                 error_msg = data['error'].get('message', 'Unknown error')
                 error_code = data['error'].get('code', 'unknown')
                 print(f"\n❌ Pesapal API Error:")
