@@ -17,8 +17,8 @@ class ProductImageSerializer(serializers.ModelSerializer):
         return None
 
 class ProductVideoSerializer(serializers.ModelSerializer):
-    video = serializers.SerializerMethodField()  # Add this
-    thumbnail = serializers.SerializerMethodField()  # Add this
+    video = serializers.SerializerMethodField()
+    thumbnail = serializers.SerializerMethodField()
     
     class Meta:
         model = ProductVideo
@@ -26,12 +26,14 @@ class ProductVideoSerializer(serializers.ModelSerializer):
     
     def get_video(self, obj):
         if obj.video:
-            return f"https://res.cloudinary.com/dudqljqqc/{obj.video}"
+            # For videos, use /video/upload/ instead of /image/upload/
+            return f"https://res.cloudinary.com/dudqljqqc/video/upload/{obj.video}"
         return None
     
     def get_thumbnail(self, obj):
         if obj.thumbnail:
-            return f"https://res.cloudinary.com/dudqljqqc/{obj.thumbnail}"
+            # Thumbnails are images, use /image/upload/
+            return f"https://res.cloudinary.com/dudqljqqc/image/upload/{obj.thumbnail}"
         return None
 
 class ProductSerializer(serializers.ModelSerializer):
