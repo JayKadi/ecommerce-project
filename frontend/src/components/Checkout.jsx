@@ -67,6 +67,8 @@ function Checkout() {
     e.preventDefault();
     setError('');
     setLoading(true);
+   // Show loading toast
+  const loadingToast = toast.loading('Creating your order... 📦');
 
     try {
       const orderData = {
@@ -82,6 +84,13 @@ function Checkout() {
       console.log('Submitting order:', orderData);
 
       const response = await createOrder(orderData);
+      // Dismiss loading toast
+    toast.dismiss(loadingToast);
+    
+    // Show success
+    toast.success('Order placed successfully! 🎉', {
+      duration: 4000,
+    });
       
       console.log('Order created:', response.data);
 

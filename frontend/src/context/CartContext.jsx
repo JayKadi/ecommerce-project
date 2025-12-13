@@ -49,7 +49,7 @@ export function CartProvider({ children }) {
   const removeFromCart = (productId) => {
   const item = cart.find(item => item.id === productId);
   
-  setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
+  setCartItems((prevCart) => prevCart.filter((item) => item.id !== productId));
   
   toast.success(`${item.name} removed from cart`, {
     icon: '🗑️',
