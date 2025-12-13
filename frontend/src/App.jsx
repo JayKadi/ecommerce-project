@@ -17,6 +17,7 @@ import UserDashboard from './components/UserDashboard';
 import OrderDetail from './components/OrderDetail';
 import SizeGuide from './components/SizeGuide';
 import AuthCallback from './pages/AuthCallback';
+import { Toaster } from 'react-hot-toast';
 
 
 // Admin components
@@ -27,6 +28,32 @@ import AdminOrders from './components/admin/AdminOrders';
 
 function App() {
   return (
+    <>
+     <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#333',
+            color: '#fff',
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            duration: 4000,
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
+      
     <Router>
       <div className="min-h-screen bg-gray-100">
         <Navbar />
@@ -91,6 +118,7 @@ function App() {
         </Routes>
       </div>
     </Router>
+     </>
   );
 }
 

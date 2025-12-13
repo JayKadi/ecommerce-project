@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 
 const CartContext = createContext();
 
@@ -24,27 +25,36 @@ export function CartProvider({ children }) {
   }, [cartItems]);
 
   const addToCart = (product) => {
-    setCartItems((prevItems) => {
-      const existingItem = prevItems.find((item) => item.id === product.id);
-      
-      if (existingItem) {
-        // Item already in cart, increase quantity
-        return prevItems.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      } else {
-        // New item, add to cart with quantity 1
-        return [...prevItems, { ...product, quantity: 1 }];
-      }
-    });
-  };
+  setCart((prevCart) => {
+    const existingItem = prevCart.find((item) => item.id === product.id);
+    
+    if (existingItem) {
+      toast.success(`${product.name} quantity updated! 🛒`, {
+        icon: '✨',
+      });
+      return prevCart.map((item) =>
+        item.id === product.id
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      );
+    } else {
+      toast.success(`${product.name} added to cart! 🐆`, {
+        icon: '🛍️',
+      });
+      return [...prevCart, { ...product, quantity: 1 }];
+    }
+  });
+};
 
   const removeFromCart = (productId) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item.id !== productId));
-  };
-
+  const item = cart.find(item => item.id === productId);
+  
+  setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
+  
+  toast.success(`${item.name} removed from cart`, {
+    icon: '🗑️',
+  });
+};
   const updateQuantity = (productId, newQuantity) => {
     if (newQuantity <= 0) {
       removeFromCart(productId);
