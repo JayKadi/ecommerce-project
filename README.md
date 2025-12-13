@@ -2,17 +2,13 @@
 
 A modern, full-featured e-commerce platform for thrift clothing, built with Django REST Framework and React. Features include Google OAuth authentication, Pesapal payment integration, and Cloudinary media management.
 
-![Kadi Thrift Banner](https://res.cloudinary.com/dudqljqqc/image/upload/your-banner-image.jpg)
 
 
-## 🌐 View Live Application
+## 🚀 Live Demo
 
-<div align="center">
-
-### 👉 [**View Live App**](https://ecommerce-project-ochre-five.vercel.app/) 👈
+- **Frontend:** [https://ecommerce-project-ochre-five.vercel.app/](https://ecommerce-project-ochre-five.vercel.app/)
 - **Backend API:** [https://ecommerce-project-production-f8f8.up.railway.app/api/](https://ecommerce-project-production-f8f8.up.railway.app/api/)
 - **Admin Dashboard:** [https://ecommerce-project-production-f8f8.up.railway.app/admin/](https://ecommerce-project-production-f8f8.up.railway.app/admin/)
-
 ## ✨ Features
 
 ### Customer Features
